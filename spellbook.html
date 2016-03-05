@@ -1,5 +1,6 @@
 <html>
     <head>
+		<title>Pathfinder Spellbook</title>
         <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
         <script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
         <script src="jquery.csv.js"></script>
@@ -9,21 +10,54 @@
     </head>
     <body>
 
-        <div id="loading">
+        <div id="loading" class="panel">
             <span id="loadingMessage"></span>
             <div id="progress"></div>
         </div>
-        <div id="spellbooks"></div>
-        <div id="bookPanel">
-            <div id="back"><span>&larr;</span> Back to all spellbooks</div>
-            <div id="bookPanelTitle"></div>
-            <div id="menu">
-                <div id="filtersButton">Edit filters.</div>
-                <div id="knownButton">Edit spells known.</div>
-                <div id="listsButton">Manage spell lists.</div>
-                <div id="memorisedButton">Spells memorised today.</div>
+
+        <div id="spellbooks" class="panel"></div>
+
+        <div id="book">
+
+            <div id="bookMenu" class="panel">
+                <div id="backToSpellbooks" class="back"><span>&larr;</span> Back to all spellbooks.</div>
+                <div id="bookPanelTitle"></div>
+                <div id="menu">
+                    <div class="button" id="detailsButton">Edit spellbook details.</div>
+                    <div class="button" id="knownButton">Edit spells known.</div>
+                    <div class="button" id="listsButton">Manage spell lists.</div>
+                    <div class="button" id="memorisedButton">Spells memorised today.</div>
+                </div>
             </div>
+
+            <div id="detailsPanel" class="panel">
+                <div id="backToBookMenu" class="back"><span>&larr;</span> Back to menu.</div>
+                <center>
+                    <p>Edit the details of this spellbook here, including which source books and classes are applicable.</p>
+                    <div>Spellbook name: <input id="spellbookNameInput"/></div>
+                    <div id="detailsAccordion">
+                        <h4 id="sourceNames">Placeholder: source names</h4>
+                        <div id="sourceItems">
+                            <label><input type="checkbox"/>Placeholder: source</label>
+                            <label><input type="checkbox"/>Placeholder: source</label>
+                            <label><input type="checkbox"/>Placeholder: source</label>
+                            <label><input type="checkbox"/>Placeholder: source</label>
+                        </div>
+                        <h4 id="classNames">Placeholder: class names</h4>
+                        <div id="classItems">
+                            <label><input type="checkbox"/>Placeholder: class</label>
+                            <label><input type="checkbox"/>Placeholder: class</label>
+                            <label><input type="checkbox"/>Placeholder: class</label>
+                            <label><input type="checkbox"/>Placeholder: class</label>
+                        </div>
+                    </div>
+                    <div class="button" id="detailsPanelApply">Apply</div>
+                    <div class="button" id="detailsPanelDelete">Delete this spellbook</div>
+                </center>
+            </div>
+
         </div>
+
 
     </body>
 </html>

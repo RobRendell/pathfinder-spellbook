@@ -1,0 +1,5 @@
+Also download feats from pathfindercommunity.net too, to get Metamagic feats?
+    https://docs.google.com/spreadsheet/pub?key=0AhwDI9kFz9SddEJPRDVsYVczNVc2TlF6VDNBYTZqbkE&output=csv
+    regex: (uses|takes) (up )?a (spell )?slot
+    Some descriptions use words (one, two), some a digits (2)
+

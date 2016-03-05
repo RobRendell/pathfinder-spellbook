@@ -1,9 +1,8 @@
-#loading, #spellbooks, #bookPanel {
+.panel {
     position: absolute;
     width: 100%;
     display: none;
 }
-
 
 .book {
     display: inline-block;
@@ -24,13 +23,13 @@
     margin-right: auto;
 }
 
-#back {
+.back {
     background-color: grey;
     font-size: 16pt;
     cursor: pointer;
 }
 
-#back span {
+.back span {
     font-size: 24pt;
 }
 
@@ -39,7 +38,7 @@
     text-align: center;
 }
 
-#menu div {
+.button {
     border: 2px solid black;
     border-radius: 10px;
     -moz-border-radius: 10px;
@@ -49,4 +48,13 @@
     text-align: center;
     margin: 10px auto;
     padding: 10px;
+    cursor: pointer;
+}
+
+#detailsAccordion {
+    width: 90%;
+}
+
+#detailsAccordion label {
+    display: block;
 }

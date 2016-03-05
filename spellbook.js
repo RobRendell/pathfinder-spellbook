@@ -243,7 +243,7 @@ var TopMenu = Class.create({
         this.globalSettings = globalSettings;
         this.spellData = spellData;
         this.bookData = {};
-        this.bookPanel = {};
+        this.bookMenu = {};
         var ids = globalSettings.getArray(BookKeys.keyBookIDs);
         $.each(ids, $.proxy(function (index, id) {
             this.bookData[id] = new Storage(id);
@@ -300,27 +300,54 @@ var TopMenu = Class.create({
     spellbookClicked: function (evt) {
         var target = evt.currentTarget;
         var id = $(target).attr('id');
-        if (!this.bookPanel[id]) {
-            this.bookPanel[id] = new BookPanel(id, this.bookData[id], this.spellData);
+        if (!this.bookMenu[id]) {
+            this.bookMenu[id] = new BookMenu(id, this.bookData[id], this.spellData, this.globalSettings);
         }
-        this.bookPanel[id].show();
+        this.bookMenu[id].showMenu();
     }
 
 });
 
-var BookPanel = Class.create({
-    init: function (id, storage, spellData) {
+var BookMenu = Class.create({
+    init: function (id, storage, spellData, globalSettings) {
         this.id = id;
         this.storage = storage;
         this.spellData = spellData;
+        this.globalSettings = globalSettings;
+        this.currentView = 'menu';
     },
 
-    show: function () {
-        $('#spellbooks').fadeOut();
+    showMenu: function () {
         var bookName = this.storage.get(BookKeys.keyBookName);
         $('#bookPanelTitle').text(bookName);
-        var bookPanel = $('#bookPanel');
-        bookPanel.fadeIn();
+        $('#spellbooks').fadeOut();
+        $('#bookMenu').fadeIn();
+        $('.back').on('click touch', $.proxy(this.back, this));
+        $('#detailsButton').on('click touch', $.proxy(this.detailsPanel, this));
+        this.currentView = 'menu';
+    },
+
+    back: function () {
+        $('.panel').fadeOut();
+        if (this.currentView == 'menu') {
+            $('#book *').off();
+            $('#spellbooks').fadeIn();
+        } else {
+            $('#bookMenu').fadeIn();
+            this.currentView = 'menu';
+        }
+    },
+
+    detailsPanel: function () {
+        $('.panel').fadeOut();
+        $('#detailsPanel').fadeIn();
+        this.currentView = 'detailsPanel';
+        $('#spellbookNameInput').val(this.storage.get(BookKeys.keyBookName));
+        $('#detailsAccordion').accordion({
+            collapsible: true,
+            active: false,
+            heightStyle: "content"
+        });
     }
 });
 
@@ -372,6 +399,7 @@ $(document).ready(function () {
     })
     .then(function (headings, spellList) {
         var spellData = new SpellData(headings, spellList);
+        // TODO show current book (and book panel) as saved in globalSettings
         new TopMenu(globalSettings, spellData);
     })
     .fail(function (err) {
@@ -379,6 +407,6 @@ $(document).ready(function () {
         $('#loading').fadeIn();
     });
     */
-    $('#loading').hide();
+    $('.panel').hide();
     new TopMenu(globalSettings, {});
 });
