@@ -1,0 +1,52 @@
+#loading, #spellbooks, #bookPanel {
+    position: absolute;
+    width: 100%;
+    display: none;
+}
+
+
+.book {
+    display: inline-block;
+    border: 2px solid black;
+    border-radius: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    margin: 10px;
+    width: 140px;
+    font-size: 16pt;
+    text-align: center;
+}
+
+.book img {
+    width: 100px;
+    height: 100px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+#back {
+    background-color: grey;
+    font-size: 16pt;
+    cursor: pointer;
+}
+
+#back span {
+    font-size: 24pt;
+}
+
+#bookPanelTitle {
+    font-size: 24pt;
+    text-align: center;
+}
+
+#menu div {
+    border: 2px solid black;
+    border-radius: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
+    width: 200px;
+    white-space: nowrap;
+    text-align: center;
+    margin: 10px auto;
+    padding: 10px;
+}
