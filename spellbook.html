@@ -1,11 +1,17 @@
 <html>
     <head>
 		<title>Pathfinder Spellbook</title>
-        <script src="http://code.jquery.com/jquery-1.8.2.js"></script>
-        <script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>
+        <!--<script src="http://code.jquery.com/jquery-1.8.2.js"></script>-->
+        <!--<script src="http://code.jquery.com/ui/1.9.0/jquery-ui.js"></script>-->
+        <script src="offline/jquery-1.8.2.js"></script>
+        <script src="offline/jquery-ui.js"></script>
+        <script src="offline/spells.js"></script>
+
         <script src="jquery.csv.js"></script>
         <script src="spellbook.js"></script>
-        <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">
+        <!--<link rel="stylesheet" href="http://code.jquery.com/ui/1.11.4/themes/smoothness/jquery-ui.css">-->
+        <link rel="stylesheet" href="offline/jquery-ui.css">
+
         <link rel="stylesheet" href="spellbook.css" />
     </head>
     <body>
@@ -34,22 +40,12 @@
                 <div id="backToBookMenu" class="back"><span>&larr;</span> Back to menu.</div>
                 <center>
                     <p>Edit the details of this spellbook here, including which source books and classes are applicable.</p>
-                    <div>Spellbook name: <input id="spellbookNameInput"/></div>
+                    <p>Spellbook name: <input id="spellbookNameInput"/></p>
                     <div id="detailsAccordion">
-                        <h4 id="sourceNames">Placeholder: source names</h4>
-                        <div id="sourceItems">
-                            <label><input type="checkbox"/>Placeholder: source</label>
-                            <label><input type="checkbox"/>Placeholder: source</label>
-                            <label><input type="checkbox"/>Placeholder: source</label>
-                            <label><input type="checkbox"/>Placeholder: source</label>
-                        </div>
-                        <h4 id="classNames">Placeholder: class names</h4>
-                        <div id="classItems">
-                            <label><input type="checkbox"/>Placeholder: class</label>
-                            <label><input type="checkbox"/>Placeholder: class</label>
-                            <label><input type="checkbox"/>Placeholder: class</label>
-                            <label><input type="checkbox"/>Placeholder: class</label>
-                        </div>
+                        <h4><span id="sourceNames"></span></h4>
+                        <div id="sourceItems"></div>
+                        <h4><span id="classNames"></span></h4>
+                        <div id="classItems"></div>
                     </div>
                     <div class="button" id="detailsPanelApply">Apply</div>
                     <div class="button" id="detailsPanelDelete">Delete this spellbook</div>
