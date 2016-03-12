@@ -4,20 +4,19 @@ Also download feats from pathfindercommunity.net too, to get Metamagic feats?
     Some descriptions use words (one, two), some a digits (2)
 
 How will the final version work?
-* Choose sources
-* Choose class(es)
+* Choose sources/class(es)/bloodlines/domains/patrons/school
+* Configure spells per day
+    * For each class/bloodline/domain/patron/spell school, choose prepared (all spells), prepared (selection) or
+        spontaneous, nominate # of spells per day of each level
 * Pick spells known/spells in spellbook
     * Option to add bloodline spells, patron spells
-* Configure spells per day
-    * For each class, choose prepared or spontaneous, nominate # of spells per day of each level
-    * Option to add domain slot, specialty school slot
 * Track spells today:
-    * spontaneous classes just list spells known and show a counter per-level which can be incremented/decremented
+    * spontaneous classes just list spells known and show a slot counter per-level which can be incremented/decremented
     * cross spells (or slots) off. Also can un-cross (Pearl of Power etc).
     * rest to restore everything
-        * prepared casters can change their list at this time:
+        * prepared lists can be changed at this time:
             * add/remove spells manually (including duplicates, metamagic feats)
-            * save/load current selection as named list ("wilderness", "town", "infiltration" etc)
+    * prepared lists: save/load current selection as named list ("wilderness", "town", "infiltration" etc)
 
 Gaps:
     * Doesn't know which classes are prepared and which are spontaneous.

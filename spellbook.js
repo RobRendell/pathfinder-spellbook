@@ -377,9 +377,10 @@ var BookKeys = {
     keyBookName: 'bookName',
     keySelectedSources: 'selectedSources',
     keySelectedClasses: 'selectedClasses',
-    keySelectedDomains: 'selectedDomains',
     keySelectedBloodlines: 'selectedBloodlines',
-    keySelectedPatrons: 'selectedPatrons'
+    keySelectedDomains: 'selectedDomains',
+    keySelectedPatrons: 'selectedPatrons',
+    keySelectedSchool: 'selectedSchool'
 };
 
 var TopMenu = Class.create({
@@ -502,6 +503,9 @@ var BookMenu = Class.create({
         $('#bookMenu').fadeIn();
         $('.back').on('click touch', $.proxy(this.back, this));
         $('#detailsButton').on('click touch', $.proxy(this.showDetailsPanel, this));
+        $('#perDayButton').on('click touch', $.proxy(this.showPerDayPanel, this));
+        $('#knownButton').on('click touch', $.proxy(this.showKnownPanel, this));
+        $('#adventuringButton').on('click touch', $.proxy(this.showAdventuringPanel, this));
         this.currentView = 'menu';
         // Details panel setup
         $('#detailsAccordion').accordion({
@@ -532,6 +536,11 @@ var BookMenu = Class.create({
             this.changeSelection(this.selectedPatrons, checkbox.attr('name'), checkbox.prop('checked'));
             this.refreshSelection('Patrons: ', $('#patronChoice'), this.selectedPatrons);
         }, this));
+        $('.school').on('change', $.proxy(function (evt) {
+            var checkbox = $(evt.target);
+            this.changeSelection(this.selectedSchool, checkbox.attr('name'), checkbox.prop('checked'));
+            this.refreshSelection('Spell School: ', $('#schoolChoice'), this.selectedSchool);
+        }, this));
         $('#detailsPanelApply').on('click touch', $.proxy(this.onDetailsPanelApply, this));
         $('#detailsPanelDelete').on('click touch', $.proxy(this.onDetailsPanelDelete, this));
     },
@@ -558,6 +567,7 @@ var BookMenu = Class.create({
         this.selectedDomains = this.storage.getArray(BookKeys.keySelectedDomains);
         this.selectedBloodlines = this.storage.getArray(BookKeys.keySelectedBloodlines);
         this.selectedPatrons = this.storage.getArray(BookKeys.keySelectedPatrons);
+        this.selectedSchool = this.storage.getArray(BookKeys.keySelectedSchool);
         this.resetDetailsCheckboxes();
     },
 
@@ -567,11 +577,13 @@ var BookMenu = Class.create({
         this.resetCheckboxes('domain', this.selectedDomains, 'domain');
         this.resetCheckboxes('bloodline', this.selectedBloodlines, 'bloodline');
         this.resetCheckboxes('patron', this.selectedPatrons, 'patron');
+        this.resetCheckboxes('school', this.selectedSchool, 'school');
         this.refreshSelectedSources();
         this.refreshSelectedClasses();
-        this.refreshSelection('Domains: ', $('#domainChoice'), this.selectedDomains);
         this.refreshSelection('Bloodlines: ', $('#bloodlineChoice'), this.selectedBloodlines);
+        this.refreshSelection('Domains: ', $('#domainChoice'), this.selectedDomains);
         this.refreshSelection('Patrons: ', $('#patronChoice'), this.selectedPatrons);
+        this.refreshSelection('School: ', $('#schoolChoice'), this.selectedSchool);
     },
 
     resetCheckboxes: function (checkboxClass, list, prefix) {
@@ -590,8 +602,8 @@ var BookMenu = Class.create({
         }
         // Only show options that exist in the given sources, or that are already on
         this.showOptionsForSourceSelection(this.spellData.classesForSources, 'class', this.selectedClasses);
-        this.showOptionsForSourceSelection(this.spellData.domainsForSources, 'domain', this.selectedDomains);
         this.showOptionsForSourceSelection(this.spellData.bloodlinesForSources, 'bloodline', this.selectedBloodlines);
+        this.showOptionsForSourceSelection(this.spellData.domainsForSources, 'domain', this.selectedDomains);
         this.showOptionsForSourceSelection(this.spellData.patronsForSources, 'patron', this.selectedPatrons);
     },
 
@@ -643,9 +655,10 @@ var BookMenu = Class.create({
         $(`.name_${this.id}`).text(newName);
         this.storage.set(BookKeys.keySelectedSources, this.selectedSources);
         this.storage.set(BookKeys.keySelectedClasses, this.selectedClasses);
-        this.storage.set(BookKeys.keySelectedDomains, this.selectedDomains);
         this.storage.set(BookKeys.keySelectedBloodlines, this.selectedBloodlines);
+        this.storage.set(BookKeys.keySelectedDomains, this.selectedDomains);
         this.storage.set(BookKeys.keySelectedPatrons, this.selectedPatrons);
+        this.storage.set(BookKeys.keySelectedSchool, this.selectedSchool);
         this.back();
     },
 
@@ -656,6 +669,24 @@ var BookMenu = Class.create({
             this.currentView = 'menu';
             this.back();
         }
+    },
+
+    showPerDayPanel: function () {
+        $('.panel').fadeOut();
+        $('#spellsPerDayPanel').fadeIn();
+        this.currentView = 'spellsPerDayPanel';
+    },
+
+    showKnownPanel: function () {
+        $('.panel').fadeOut();
+        $('#spellsKnownPanel').fadeIn();
+        this.currentView = 'spellsKnownPanel';
+    },
+
+    showAdventuringPanel: function () {
+        $('.panel').fadeOut();
+        $('#adventuringPanel').fadeIn();
+        this.currentView = 'adventuringPanel';
     }
 });
 
