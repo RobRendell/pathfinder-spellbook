@@ -202,30 +202,129 @@ var SpellData = Class.create({
             }
         }, this));
         this.classHeadings = Object.keys(this.classNames).sort()
+        // Lots of later books add Core and APG spells to their new classes, bloodlines and domains.
         this.classesForSources = {
             'PFRPG Core': [ 'adept', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sor', 'wiz' ],
             'APG': [ 'alchemist', 'inquisitor', 'oracle', 'summoner', 'witch' ]
         };
-        $.each(rawData, $.proxy(function (index, spell) {
-            if (!this.classesForSources[spell.source] || $.isArray(this.classesForSources[spell.source])) {
-                $.each(this.classHeadings, $.proxy(function (index, classHeading) {
-                    if (spell[classHeading] == 'NULL') {
-                        spell[classHeading] = null;
-                    } else {
-                        if (!this.classesForSources[spell.source]) {
-                            this.classesForSources[spell.source] = {}
-                        }
-                        this.classesForSources[spell.source][classHeading] = 1
-                    }
-                }, this))
-            }
-        }, this));
+        this.bloodlinesForSources = {
+            'PFRPG Core': [ 'Aberrant', 'Abyssal', 'Arcane', 'Celestial', 'Destined', 'Draconic', 'Elemental', 'Fey',
+                'Infernal', 'Undead' ],
+            'APG': [ 'Aquatic', 'Boreal', 'Deepearth', 'Dreamspun', 'Protean', 'Serpentine', 'Shadow', 'Starsoul',
+                'Stormborn', 'Verdant' ]
+        };
+        this.domainsForSources = {
+            'PFRPG Core': [ 'Air', 'Animal', 'Artifice', 'Chaos', 'Charm', 'Community', 'Darkness', 'Death',
+                'Destruction', 'Earth', 'Evil', 'Fire', 'Glory', 'Good', 'Healing', 'Knowledge', 'Law', 'Liberation',
+                'Luck', 'Madness', 'Magic', 'Nobility', 'Plant', 'Protection', 'Repose', 'Rune', 'Strength', 'Sun',
+                'Travel', 'Trickery', 'War', 'Water', 'Weather' ],
+            'APG': [ 'Agathion', 'Ancestors', 'Arcane', 'Archon', 'Ash', 'Azata', 'Blood', 'Catastrophe', 'Caves',
+                'Cloud', 'Construct', 'Curse', 'Daemon', 'Day', 'Decay', 'Deception', 'Defense', 'Demon', 'Devil',
+                'Divine', 'Exploration', 'Family', 'Fate', 'Feather', 'Ferocity', 'Freedom', 'Fur', 'Growth',
+                'Heroism', 'Home', 'Honor', 'Ice', 'Inevitable', 'Insanity', 'Language', 'Leadership', 'Light',
+                'Loss', 'Love', 'Lust', 'Martyr', 'Memory', 'Metal', 'Murder', 'Night', 'Nightmare', 'Oceans',
+                'Protean', 'Purity', 'Rage', 'Resolve', 'Restoration', 'Resurrection', 'Revolution', 'Seasons',
+                'Smoke', 'Souls', 'Storms', 'Tactics', 'Thievery', 'Thought', 'Toil', 'Trade', 'Undead', 'Wards',
+                'Wind' ]
+        };
+        this.patronsForSources = {
+            'PFRPG Core': [],
+            'APG': [ 'Agility', 'Animals', 'Deception', 'Elements', 'Endurance', 'Plague', 'Shadow', 'Strength',
+                'Transformation', 'Trickery', 'Water', 'Wisdom' ]
+        };
+        this.buildResultMapsForSources([
+            [ this.classesForSources, $.proxy(this.getClassesFromSpell, this) ],
+            [ this.domainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
+            [ this.bloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
+            [ this.patronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
+        ]);
         this.sources = Object.keys(this.classesForSources).sort($.proxy(this.sourceSort, this));
-        $.each(this.sources, $.proxy(function (index, source) {
-            if (!$.isArray(this.classesForSources[source])) {
-                this.classesForSources[source] = Object.keys(this.classesForSources[source]);
+        this.domains = this.valuesFromSourceMap(this.domainsForSources).sort();
+        this.bloodlines = this.valuesFromSourceMap(this.bloodlinesForSources).sort();
+        this.patrons = this.valuesFromSourceMap(this.patronsForSources).sort();
+        // Sanity check
+        var thisclassesForSources = {};
+        var thisdomainsForSources = {};
+        var thisbloodlinesForSources = {};
+        var thispatronsForSources = {};
+        this.buildResultMapsForSources([
+            [ thisclassesForSources, $.proxy(this.getClassesFromSpell, this) ],
+            [ thisdomainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
+            [ thisbloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
+            [ thispatronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
+        ]);
+        var domains = this.valuesFromSourceMap(thisdomainsForSources).sort();
+        var bloodlines = this.valuesFromSourceMap(thisbloodlinesForSources).sort();
+        var patrons = this.valuesFromSourceMap(thispatronsForSources).sort();
+        console.log(`domains: actual ${domains.length} vs correct core/apg ${this.domains.length}`);
+        console.log(`bloodlines: actual ${bloodlines.length} vs correct core/apg ${this.bloodlines.length}`);
+        console.log(`patrons: actual ${patrons.length} vs correct core/apg ${this.patrons.length}`);
+    },
+
+    getClassesFromSpell: function (spell, map) {
+        if (!map) {
+            map = {}
+        }
+        $.each(this.classHeadings, function (index, classHeading) {
+            if (spell[classHeading] === 'NULL' || spell[classHeading] === null) {
+                spell[classHeading] = null;
+            } else {
+                map[classHeading] = parseInt(spell[classHeading]);
             }
-        }, this));
+        });
+        return map;
+    },
+
+    getDomainsFromSpell: function (spell, map) {
+        return this.getLevelsFromSpellField(spell.domain, map);
+    },
+
+    getBloodlinesFromSpell: function (spell, map) {
+        return this.getLevelsFromSpellField(spell.bloodline, map);
+    },
+
+    getPatronsFromSpell: function (spell, map) {
+        return this.getLevelsFromSpellField(spell.patron, map);
+    },
+
+    getLevelsFromSpellField: function (field, map) {
+        if (!map) {
+            map = {};
+        }
+        if (field) {
+            $.each(field.split(/, */), function (index, value) {
+                var keyValueArray = value.match(/([^()]*?) \(([0-9]*)\)/);
+                if (keyValueArray) {
+                    map[keyValueArray[1]] = parseInt(keyValueArray[2]);
+                } else {
+                    console.error("Field didn't match expected pattern: " + value);
+                }
+            });
+        }
+        return map;
+    },
+
+    buildResultMapsForSources: function (resultMapsAndFnList) {
+        $.each(this.rawData, function (index, spell) {
+            $.each(resultMapsAndFnList, function (index, resultMapAndFn) {
+                var resultMap = resultMapAndFn[0];
+                var resultFn = resultMapAndFn[1];
+                if (!resultMap[spell.source]) {
+                    resultMap[spell.source] = {}
+                }
+                if (!$.isArray(resultMap[spell.source])) {
+                    resultFn(spell, resultMap[spell.source]);
+                }
+            });
+        });
+        $.each(resultMapsAndFnList, function (index, resultMapAndFn) {
+            var resultMap = resultMapAndFn[0];
+            $.each(resultMap, function (source, value) {
+                if (!$.isArray(value)) {
+                    resultMap[source] = Object.keys(value);
+                }
+            });
+        });
     },
 
     sourceSort: function (o1, o2) {
@@ -254,14 +353,21 @@ var SpellData = Class.create({
         }
     },
 
-    getClassHeadingsForSources: function (sourceList) {
+    valuesFromSourceMap: function (sourceMap, sourceList) {
         var result = {};
+        if (!sourceList) {
+            sourceList = Object.keys(sourceMap);
+        }
         $.each(sourceList, $.proxy(function (index, source) {
-            $.each(this.classesForSources[source], function (index, classHeading) {
-                result[classHeading] = 1;
+            $.each(sourceMap[source], function (index, value) {
+                result[value] = 1;
             });
         }, this));
         return Object.keys(result);
+    },
+
+    getClassHeadingsForSources: function (sourceList) {
+        return this.valuesFromSourceMap(this.classesForSources, sourceList);
     }
 
 });
@@ -270,7 +376,10 @@ var BookKeys = {
     keyBookIDs: 'bookIDs',
     keyBookName: 'bookName',
     keySelectedSources: 'selectedSources',
-    keySelectedClasses: 'selectedClasses'
+    keySelectedClasses: 'selectedClasses',
+    keySelectedDomains: 'selectedDomains',
+    keySelectedBloodlines: 'selectedBloodlines',
+    keySelectedPatrons: 'selectedPatrons'
 };
 
 var TopMenu = Class.create({
@@ -294,9 +403,12 @@ var TopMenu = Class.create({
         });
         $.each(this.spellData.classHeadings, function (index, classHeading) {
             var className = spellData.classNames[classHeading];
-            var sourceLine = $(`<label class="characterClassLabel"><input type="checkbox" id="class_${classHeading.toId()}" name="${classHeading}" class="characterClass"> ${className}</label>`)
+            var sourceLine = $(`<label class="classLabel"><input type="checkbox" id="class_${classHeading.toId()}" name="${classHeading}" class="characterClass"> ${className}</label>`)
             $('#classItems').append(sourceLine);
         });
+        this.addOptionsToSelect(this.spellData.domains, 'domain');
+        this.addOptionsToSelect(this.spellData.bloodlines, 'bloodline');
+        this.addOptionsToSelect(this.spellData.patrons, 'patron');
     },
 
     refresh: function () {
@@ -360,6 +472,13 @@ var TopMenu = Class.create({
         this.bookData[id].clearAll();
         delete(this.bookData[id]);
         this.globalSettings.set(BookKeys.keyBookIDs, Object.keys(this.bookData));
+    },
+
+    addOptionsToSelect: function (valueList, prefix) {
+        $.each(valueList, function (index, value) {
+            var line = $(`<label class="${prefix}Label"><input type="checkbox" id="${prefix}_${value.toId()}" name="${value}" class="${prefix}"> ${value}</label>`)
+            $(`#${prefix}Items`).append(line);
+        });
     }
 
 });
@@ -398,6 +517,21 @@ var BookMenu = Class.create({
             var checkbox = $(evt.target);
             this.refreshSelectedClasses(checkbox.attr('name'), checkbox.prop('checked'));
         }, this));
+        $('.domain').on('change', $.proxy(function (evt) {
+            var checkbox = $(evt.target);
+            this.changeSelection(this.selectedDomains, checkbox.attr('name'), checkbox.prop('checked'));
+            this.refreshSelection('Domains: ', $('#domainChoice'), this.selectedDomains);
+        }, this));
+        $('.bloodline').on('change', $.proxy(function (evt) {
+            var checkbox = $(evt.target);
+            this.changeSelection(this.selectedBloodlines, checkbox.attr('name'), checkbox.prop('checked'));
+            this.refreshSelection('Bloodlines: ', $('#bloodlineChoice'), this.selectedBloodlines);
+        }, this));
+        $('.patron').on('change', $.proxy(function (evt) {
+            var checkbox = $(evt.target);
+            this.changeSelection(this.selectedPatrons, checkbox.attr('name'), checkbox.prop('checked'));
+            this.refreshSelection('Patrons: ', $('#patronChoice'), this.selectedPatrons);
+        }, this));
         $('#detailsPanelApply').on('click touch', $.proxy(this.onDetailsPanelApply, this));
         $('#detailsPanelDelete').on('click touch', $.proxy(this.onDetailsPanelDelete, this));
     },
@@ -421,20 +555,30 @@ var BookMenu = Class.create({
         $('#spellbookNameInput').val(this.storage.get(BookKeys.keyBookName));
         this.selectedSources = this.storage.getArray(BookKeys.keySelectedSources);
         this.selectedClasses = this.storage.getArray(BookKeys.keySelectedClasses);
+        this.selectedDomains = this.storage.getArray(BookKeys.keySelectedDomains);
+        this.selectedBloodlines = this.storage.getArray(BookKeys.keySelectedBloodlines);
+        this.selectedPatrons = this.storage.getArray(BookKeys.keySelectedPatrons);
         this.resetDetailsCheckboxes();
     },
 
     resetDetailsCheckboxes: function () {
-        $('.sourcebook').prop('checked', false);
-        $.each(this.selectedSources, function (index, source) {
-            $(`#source_${source.toId()}`).prop('checked', true);
-        });
+        this.resetCheckboxes('sourcebook', this.selectedSources, 'source');
+        this.resetCheckboxes('characterclass', this.selectedClasses, 'class');
+        this.resetCheckboxes('domain', this.selectedDomains, 'domain');
+        this.resetCheckboxes('bloodline', this.selectedBloodlines, 'bloodline');
+        this.resetCheckboxes('patron', this.selectedPatrons, 'patron');
         this.refreshSelectedSources();
-        $('.characterclass').prop('checked', false);
-        $.each(this.selectedClasses, function (index, characterClass) {
-            $(`#class_${characterClass.toId()}`).prop('checked', true);
-        });
         this.refreshSelectedClasses();
+        this.refreshSelection('Domains: ', $('#domainChoice'), this.selectedDomains);
+        this.refreshSelection('Bloodlines: ', $('#bloodlineChoice'), this.selectedBloodlines);
+        this.refreshSelection('Patrons: ', $('#patronChoice'), this.selectedPatrons);
+    },
+
+    resetCheckboxes: function (checkboxClass, list, prefix) {
+        $('.' + checkboxClass).prop('checked', false);
+        $.each(list, function (index, value) {
+            $(`#${prefix}_${value.toId()}`).prop('checked', true);
+        });
     },
 
     refreshSelectedSources: function (source, enabled) {
@@ -444,14 +588,19 @@ var BookMenu = Class.create({
         } else {
             $('#sourceNames').text('Source books: none selected');
         }
-        // Only show classes that exist in the given sources, or that are already on
-        var classHeadings = this.spellData.getClassHeadingsForSources(this.selectedSources);
-        $('.characterClassLabel').hide();
-        var showClass = $.proxy(function (index, classHeading) {
-            $(`#class_${classHeading.toId()}`).parent().show();
-        }, this);
-        $.each(classHeadings, showClass);
-        $.each(this.selectedClasses, showClass);
+        // Only show options that exist in the given sources, or that are already on
+        this.showOptionsForSourceSelection(this.spellData.classesForSources, 'class', this.selectedClasses);
+        this.showOptionsForSourceSelection(this.spellData.domainsForSources, 'domain', this.selectedDomains);
+        this.showOptionsForSourceSelection(this.spellData.bloodlinesForSources, 'bloodline', this.selectedBloodlines);
+        this.showOptionsForSourceSelection(this.spellData.patronsForSources, 'patron', this.selectedPatrons);
+    },
+
+    showOptionsForSourceSelection: function (sourceMap, prefix, current) {
+        var values = this.spellData.valuesFromSourceMap(sourceMap, this.selectedSources);
+        $(`.${prefix}Label`).hide();
+        $.each(values.concat(current), function (index, value) {
+            $(`#${prefix}_${value.toId()}`).parent().show();
+        });
     },
 
     refreshSelectedClasses: function (classHeading, enabled) {
@@ -480,7 +629,7 @@ var BookMenu = Class.create({
         }
     },
 
-    refreshSelection: function (label, element, list, value, enabled, sortFn) {
+    refreshSelection: function (label, element, list) {
         if (list.length > 0) {
             element.text(label + list.join(', '));
         } else {
@@ -494,6 +643,9 @@ var BookMenu = Class.create({
         $(`.name_${this.id}`).text(newName);
         this.storage.set(BookKeys.keySelectedSources, this.selectedSources);
         this.storage.set(BookKeys.keySelectedClasses, this.selectedClasses);
+        this.storage.set(BookKeys.keySelectedDomains, this.selectedDomains);
+        this.storage.set(BookKeys.keySelectedBloodlines, this.selectedBloodlines);
+        this.storage.set(BookKeys.keySelectedPatrons, this.selectedPatrons);
         this.back();
     },
 
