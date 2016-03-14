@@ -25,3 +25,7 @@ Current algorithm to get domains/bloodlines/patrons from sources is wrong, misse
 domains: actual 152 vs correct core/apg 124
 bloodlines: actual 42 vs correct core/apg 27
 patrons: actual 37 vs correct core/apg 24
+
+Save current "screen" (selected book, current view) to globalSettings and display that on load.
+
+Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their spells known each day).

@@ -9,6 +9,13 @@ String.prototype.toTitleCase = function () {
     });
 }
 
+Number.prototype.ordinal = function (n) {
+    n = (n !== undefined) ? n : this;
+    var suffix = ["th","st","nd","rd"];
+    var value = n%100;
+    return n + (suffix[(value-20)%10] || suffix[value] || suffix[0]);
+}
+
 var Class = {
     create: function(settings) {
         var newClass = function() {
@@ -233,7 +240,7 @@ var SpellData = Class.create({
                 'Transformation', 'Trickery', 'Water', 'Wisdom' ]
         };
         this.buildResultMapsForSources([
-            [ this.classesForSources, $.proxy(this.getClassesFromSpell, this) ],
+            [ this.classesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
             [ this.domainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
             [ this.bloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
             [ this.patronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
@@ -248,7 +255,7 @@ var SpellData = Class.create({
         var thisbloodlinesForSources = {};
         var thispatronsForSources = {};
         this.buildResultMapsForSources([
-            [ thisclassesForSources, $.proxy(this.getClassesFromSpell, this) ],
+            [ thisclassesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
             [ thisdomainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
             [ thisbloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
             [ thispatronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
@@ -261,7 +268,7 @@ var SpellData = Class.create({
         console.log(`patrons: actual ${patrons.length} vs correct core/apg ${this.patrons.length}`);
     },
 
-    getClassesFromSpell: function (spell, map) {
+    getClassLevelsFromSpell: function (spell, map) {
         if (!map) {
             map = {}
         }
@@ -269,7 +276,10 @@ var SpellData = Class.create({
             if (spell[classHeading] === 'NULL' || spell[classHeading] === null) {
                 spell[classHeading] = null;
             } else {
-                map[classHeading] = parseInt(spell[classHeading]);
+                var value = parseInt(spell[classHeading]);
+                if (!map[classHeading] || value > map[classHeading]) {
+                    map[classHeading] = value;
+                }
             }
         });
         return map;
@@ -295,7 +305,10 @@ var SpellData = Class.create({
             $.each(field.split(/, */), function (index, value) {
                 var keyValueArray = value.match(/([^()]*?) \(([0-9]*)\)/);
                 if (keyValueArray) {
-                    map[keyValueArray[1]] = parseInt(keyValueArray[2]);
+                    var value = parseInt(keyValueArray[2]);
+                    if (!map[keyValueArray[1]] || value > map[keyValueArray[1]]) {
+                        map[keyValueArray[1]] = value;
+                    }
                 } else {
                     console.error("Field didn't match expected pattern: " + value);
                 }
@@ -380,7 +393,9 @@ var BookKeys = {
     keySelectedBloodlines: 'selectedBloodlines',
     keySelectedDomains: 'selectedDomains',
     keySelectedPatrons: 'selectedPatrons',
-    keySelectedSchool: 'selectedSchool'
+    keySelectedSchool: 'selectedSchool',
+    keySlotType: 'slotType_',
+    keySlots: 'slots_'
 };
 
 var TopMenu = Class.create({
@@ -424,9 +439,9 @@ var TopMenu = Class.create({
     },
 
     addNewBookButton: function () {
-        var button = $('<div class="book"></div>');
+        var button = $('<div class="book" />');
         button.append($('<img src="newBook.png" />'));
-        button.append($('<div></div>').text('New spellbook'));
+        button.append($('<div />').text('New spellbook'));
         button.on('click touch', $.proxy(this.newSpellbookClicked, this));
         $('#spellbooks').append(button);
         this.newBookButton = button;
@@ -451,7 +466,7 @@ var TopMenu = Class.create({
 
     addBookButton: function (id, storage) {
         var text = storage.get(BookKeys.keyBookName);
-        var button = $('<div class="book"></div>');
+        var button = $('<div class="book" />');
         button.attr('id', id);
         button.append($('<img src="book.png" />'));
         button.append($(`<div class="name_${id}"></div>`).text(text));
@@ -495,12 +510,26 @@ var BookMenu = Class.create({
     },
 
     showMenu: function () {
-        $('#bookPanelTitle').removeClass();
-        $('#bookPanelTitle').addClass(`name_${this.id}`)
-        var bookName = this.storage.get(BookKeys.keyBookName);
-        $('#bookPanelTitle').text(bookName);
-        $('#spellbooks').fadeOut();
+        $('.panel').fadeOut();
         $('#bookMenu').fadeIn();
+        // Load data
+        this.selectedSources = this.storage.getArray(BookKeys.keySelectedSources);
+        this.selectedClasses = this.storage.getArray(BookKeys.keySelectedClasses);
+        this.selectedClassNames = this.selectedClasses.map($.proxy(function (key) {
+            return this.spellData.classNames[key];
+        }, this));
+        this.selectedDomains = this.storage.getArray(BookKeys.keySelectedDomains);
+        this.selectedBloodlines = this.storage.getArray(BookKeys.keySelectedBloodlines);
+        this.selectedPatrons = this.storage.getArray(BookKeys.keySelectedPatrons);
+        this.selectedSchool = this.storage.getArray(BookKeys.keySelectedSchool);
+        this.classSlots = this.loadSpellsPerDay(this.selectedClassNames, '');
+        this.bloodlineSlots = this.loadSpellsPerDay(this.selectedBloodlines, 'Bloodline: ');
+        this.domainSlots = this.loadSpellsPerDay(this.selectedDomains, 'Domain: ');
+        this.patronSlots = this.loadSpellsPerDay(this.selectedPatrons, 'Patron: ');
+        this.schoolSlots = this.loadSpellsPerDay(this.selectedSchool, 'School: ');
+        // Set up elements
+        $('#bookPanelTitle').removeClass();
+        $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
         $('.back').on('click touch', $.proxy(this.back, this));
         $('#detailsButton').on('click touch', $.proxy(this.showDetailsPanel, this));
         $('#perDayButton').on('click touch', $.proxy(this.showPerDayPanel, this));
@@ -543,6 +572,19 @@ var BookMenu = Class.create({
         }, this));
         $('#detailsPanelApply').on('click touch', $.proxy(this.onDetailsPanelApply, this));
         $('#detailsPanelDelete').on('click touch', $.proxy(this.onDetailsPanelDelete, this));
+        $('#spellsPerDayPanelApply').on('click touch', $.proxy(this.onSpellsPerDayPanelApply, this));
+    },
+
+    loadSpellsPerDay: function (list, prefix) {
+        var result = {};
+        $.each(list, $.proxy(function (index, value) {
+            var maxLevel = 9; // TODO
+            var heading = prefix + value;
+            var slotType = this.storage.get(BookKeys.keySlotType + heading.toId());
+            var slots = this.storage.getArray(BookKeys.keySlots + heading.toId());
+            result[heading] = { 'slotType': slotType, 'slots': slots };
+        }, this));
+        return result;
     },
 
     back: function () {
@@ -562,12 +604,6 @@ var BookMenu = Class.create({
         $('#detailsPanel').fadeIn();
         this.currentView = 'detailsPanel';
         $('#spellbookNameInput').val(this.storage.get(BookKeys.keyBookName));
-        this.selectedSources = this.storage.getArray(BookKeys.keySelectedSources);
-        this.selectedClasses = this.storage.getArray(BookKeys.keySelectedClasses);
-        this.selectedDomains = this.storage.getArray(BookKeys.keySelectedDomains);
-        this.selectedBloodlines = this.storage.getArray(BookKeys.keySelectedBloodlines);
-        this.selectedPatrons = this.storage.getArray(BookKeys.keySelectedPatrons);
-        this.selectedSchool = this.storage.getArray(BookKeys.keySelectedSchool);
         this.resetDetailsCheckboxes();
     },
 
@@ -617,14 +653,10 @@ var BookMenu = Class.create({
 
     refreshSelectedClasses: function (classHeading, enabled) {
         this.changeSelection(this.selectedClasses, classHeading, enabled, undefined);
-        if (this.selectedClasses.length > 0) {
-            var classNames = this.selectedClasses.map($.proxy(function (key) {
-                return this.spellData.classNames[key];
-            }, this));
-            $('#classNames').text('Character classes: ' + classNames.join(', '));
-        } else {
-            $('#classNames').text('Character classes: none selected');
-        }
+        this.selectedClassNames = this.selectedClasses.map($.proxy(function (key) {
+            return this.spellData.classNames[key];
+        }, this));
+        this.refreshSelection('Character classes: ', $('#classNames'), this.selectedClassNames);
     },
 
     changeSelection: function (list, value, enabled, sortFn) {
@@ -675,6 +707,107 @@ var BookMenu = Class.create({
         $('.panel').fadeOut();
         $('#spellsPerDayPanel').fadeIn();
         this.currentView = 'spellsPerDayPanel';
+        $('#spellsPerDayItems').html('');
+        this.addClassSpellsPerDay();
+    },
+
+    textPreparedSlots: 'Prepared spell slots',
+    textSpontaneousSlots: 'Spontaneous spell slots',
+    textNotSlots: 'Not spell slots',
+
+    addClassSpellsPerDay: function () {
+        this.appendCategory(this.selectedClassNames, '', this.classSlots, $.proxy(this.defaultSlotForClass, this));
+        this.appendCategory(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots, this.textNotSlots);
+        this.appendCategory(this.selectedDomains, 'Domain: ', this.domainSlots, this.textPreparedSlots);
+        this.appendCategory(this.selectedPatrons, 'Patron: ', this.patronSlots, this.textNotSlots);
+        this.appendCategory(this.selectedSchool, 'School: ', this.schoolSlots, this.textPreparedSlots);
+    },
+
+    defaultSlotForClass: function (className) {
+        // I don't believe this can be made data-driven from the stuff available from pathfindercommunity.net :(
+        if (className == 'Bard' || className == 'Bloodrager' || className == 'Inquisitor' || className == 'Oracle' ||
+                className == 'Skald' || className == 'Sorcerer' || className == 'Summoner') {
+            return this.textSpontaneousSlots;
+        } else {
+            return this.textPreparedSlots;
+        }
+    },
+
+    appendCategory: function (list, prefix, previousValues, defaultValue) {
+        $.each(list, $.proxy(function (index, value) {
+            var maxLevel = 9; // TODO
+            if ($.isFunction(defaultValue)) {
+                this.appendSpellsPerDay(prefix + value, maxLevel, previousValues, defaultValue(value));
+            } else {
+                this.appendSpellsPerDay(prefix + value, maxLevel, previousValues, defaultValue);
+            }
+        }, this));
+    },
+
+    appendSpellsPerDay: function (heading, maxLevel, previousValues, defaultValue) {
+        var slotData = previousValues[heading] || { 'slots': [] };
+        var topDiv = $('<div/>').addClass('spellsPerDay');
+        var title = $('<div/>');
+        title.append($('<b/>').text(heading + ' spells per day'));
+        var control = $(`<select class="spellsPerDaySlotType" id="${heading.toId()}_slotType" />`);
+        control.append($('<option/>').text(this.textPreparedSlots));
+        control.append($('<option/>').text(this.textSpontaneousSlots));
+        control.append($('<option/>').text(this.textNotSlots));
+        title.append(control);
+        var tableId = heading.toId() + '_slots';
+        control.on('change', $.proxy(function (evt) {
+            if (control.val() == this.textNotSlots) {
+                $('#' + tableId).hide();
+            } else {
+                $('#' + tableId).show();
+            }
+        }, this));
+        control.val(slotData.slotType || defaultValue);
+        topDiv.append(title);
+        var table = $('<table />').attr('id', tableId);
+        var row = $('<tr />');
+        for (var level = 0; level <= maxLevel; ++level) {
+            row.append($('<td />').text(Number.prototype.ordinal(level) + " level"));
+        }
+        table.append(row);
+        row = $('<tr />');
+        for (var level = 0; level <= maxLevel; ++level) {
+            var data = $('<td />');
+            var inputElement = $(`<input type="number" step="1" class="spellPerDay_${heading.toId()}" />`);
+            data.append(inputElement);
+            inputElement.val(slotData.slots[level] || 0);
+            row.append(data);
+        }
+        table.append(row);
+        topDiv.append(table);
+        $('#spellsPerDayItems').append(topDiv);
+        control.trigger('change');
+    },
+
+    onSpellsPerDayPanelApply: function () {
+        this.classSlots = this.saveSpellsPerDay(this.selectedClassNames, '');
+        this.bloodlineSlots = this.saveSpellsPerDay(this.selectedBloodlines, 'Bloodline: ');
+        this.domainSlots = this.saveSpellsPerDay(this.selectedDomains, 'Domain: ');
+        this.patronSlots = this.saveSpellsPerDay(this.selectedPatrons, 'Patron: ');
+        this.schoolSlots = this.saveSpellsPerDay(this.selectedSchool, 'School: ');
+        this.back();
+    },
+
+    saveSpellsPerDay: function (list, prefix) {
+        var result = {};
+        $.each(list, $.proxy(function (index, value) {
+            var maxLevel = 9; // TODO
+            var heading = prefix + value;
+            var slotType = $(`#${heading.toId()}_slotType`).val();
+            var slots = [];
+            $(`.spellPerDay_${heading.toId()}`).each(function (index, input) {
+                slots.push($(input).val());
+            });
+            this.storage.set(BookKeys.keySlotType + heading.toId(), slotType);
+            this.storage.set(BookKeys.keySlots + heading.toId(), slots);
+            result[heading] = { 'slotType': slotType, 'slots': slots };
+        }, this));
+        return result;
     },
 
     showKnownPanel: function () {
