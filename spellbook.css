@@ -61,7 +61,7 @@
     cursor: pointer;
 }
 
-#detailsAccordion {
+#detailsAccordion, #spellListAccordion {
     width: 90%;
 }
 
@@ -69,8 +69,8 @@
     display: block;
 }
 
-#detailsAccordion div+h4 {
-    margin-top: 0.5cm;
+.accordion div + h4 {
+    margin-top: 0.5cm !important;
 }
 
 .spellsPerDaySlotType {
@@ -98,4 +98,39 @@
 
 .spellsPerDay input {
     width: 4em;
+}
+
+.spell + .spell {
+    margin-top: 1px;
+}
+
+.spell .title {
+}
+
+.spell.abjuration {
+    background-color: #99ff99;
+}
+.spell.conjuration {
+    background-color: #ff9e55;
+}
+.spell.divination {
+    background-color: #88aaff;
+}
+.spell.enchantment {
+    background-color: #a5fdfb;
+}
+.spell.evocation {
+    background-color: #ff7777;
+}
+.spell.illusion {
+    background-color: #bf7bf3;
+}
+.spell.necromancy {
+    background-color: #aaaaaa;
+}
+.spell.transmutation {
+    background-color: #ffffaa;
+}
+.spell.universal {
+    background-color: white;
 }

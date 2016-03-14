@@ -590,7 +590,7 @@ var BookMenu = Class.create({
     back: function () {
         $('.panel').fadeOut();
         if (this.currentView == 'menu') {
-            $('#detailsAccordion').accordion('destroy');
+            $('.ui-accordion').accordion('destroy');
             $('#book *').off();
             this.topMenu.refresh();
         } else {
@@ -814,6 +814,89 @@ var BookMenu = Class.create({
         $('.panel').fadeOut();
         $('#spellsKnownPanel').fadeIn();
         this.currentView = 'spellsKnownPanel';
+        $('#spellsKnownPanel .ui-accordion').accordion('destroy');
+        $('#spellListAccordion').html('');
+        this.listClassSpells();
+//        this.listSpellCategory(this.selectedBloodlines, 'Bloodlines: ');
+//        this.listSpellCategory(this.selectedDomains, 'Domains: ');
+//        this.listSpellCategory(this.selectedPatrons, 'Patron: ');
+//        this.listSpellCategory(this.selectedSchool, 'School: ');
+        $('#spellsKnownPanel .accordion').accordion({
+            collapsible: true,
+            active: false,
+            heightStyle: "content"
+        });
+    },
+
+    listSpellCategory: function (list, prefix) {
+        var accordion = $('#spellListAccordion');
+        $.each(list, $.proxy(function (index, value) {
+            value = prefix + value;
+            var name = (prefix) ? value : this.spellData.classNames[value];
+            accordion.append($('<h3/>').text(name));
+            var categoryDiv = $('<div class="accordion" />');
+            this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
+            var lastLevel, currentDiv;
+            $.each(this.spellData.rawData, $.proxy(function (index, spell) {
+                if (spell[value] !== null && this.selectedSources.indexOf(spell.source) >= 0) {
+                    if (spell[value] != lastLevel) {
+                        lastLevel = spell[value];
+                        categoryDiv.append($('<h4 />').text('Level ' + lastLevel));
+                        currentDiv = $('<div />');
+                        categoryDiv.append(currentDiv);
+                    }
+                    this.appendSpellLine(currentDiv, spell);
+                }
+            }, this));
+            accordion.append(categoryDiv);
+        }, this));
+    },
+
+    listClassSpells: function () {
+        var accordion = $('#spellListAccordion');
+        $.each(this.selectedClasses, $.proxy(function (index, classHeading) {
+            var className = this.spellData.classNames[classHeading];
+            accordion.append($('<h3/>').text(className));
+            var categoryDiv = $('<div class="accordion" />');
+            this.spellData.rawData.sort(this.orderSpellsByFields(classHeading, 'name'));
+            var lastLevel, currentDiv;
+            $.each(this.spellData.rawData, $.proxy(function (index, spell) {
+                if (spell[classHeading] !== null && this.selectedSources.indexOf(spell.source) >= 0) {
+                    if (spell[classHeading] != lastLevel) {
+                        lastLevel = spell[classHeading];
+                        categoryDiv.append($('<h4 />').text('Level ' + lastLevel));
+                        currentDiv = $('<div />');
+                        categoryDiv.append(currentDiv);
+                    }
+                    this.appendSpellLine(currentDiv, spell);
+                }
+            }, this));
+            accordion.append(categoryDiv);
+        }, this));
+    },
+
+    appendSpellLine: function (element, spell) {
+        var line = $('<div class="spell" />');
+        line.addClass(spell.school);
+        line.append($(`<span class="title">${spell.name}</span>`));
+        line.append($(`<span> (${spell.school})</span>`));
+        element.append(line);
+    },
+
+    orderSpellsByFields: function () {
+        var fields = arguments;
+        return function (o1, o2) {
+            for (var index = 0; index < fields.length; ++index) {
+                var v1 = o1[fields[index]];
+                var v2 = o2[fields[index]];
+                if (v1 < v2) {
+                    return -1;
+                } else if (v1 > v2) {
+                    return 1;
+                }
+            }
+            return 0;
+        };
     },
 
     showAdventuringPanel: function () {
