@@ -73,6 +73,16 @@
     margin-top: 0.5cm !important;
 }
 
+.spellsKnownLink {
+    font-size: 70%;
+    margin: 0 1em;
+    float: right;
+}
+
+.spellsKnownLink:hover {
+    text-decoration: underline;
+}
+
 .spellsPerDaySlotType {
     margin-left: 4em;
 }

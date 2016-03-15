@@ -876,7 +876,10 @@ var BookMenu = Class.create({
         $.each(list, $.proxy(function (index, value) {
             value = prefix + value;
             var name = (prefix) ? value : this.spellData.classNames[value];
-            accordion.append($('<h3/>').text(name));
+            var headingElt = $('<h3/>').text(name);
+            accordion.append(headingElt);
+            headingElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
+            headingElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
             var categoryDiv = $('<div/>').addClass('accordion').addClass(value.toId());
             this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
             var lastLevel, currentDiv;
@@ -884,7 +887,10 @@ var BookMenu = Class.create({
                 if (spell[value] !== undefined && this.selectedSources.indexOf(spell.source) >= 0) {
                     if (spell[value] != lastLevel) {
                         lastLevel = spell[value];
-                        categoryDiv.append($('<h4 />').text('Level ' + lastLevel));
+                        var levelElt = $('<h4 />').text('Level ' + lastLevel);
+                        levelElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
+                        levelElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
+                        categoryDiv.append(levelElt);
                         currentDiv = $('<div />');
                         categoryDiv.append(currentDiv);
                     }
@@ -913,6 +919,20 @@ var BookMenu = Class.create({
         }
         element.append(line);
         return line;
+    },
+
+    setAllCheckboxes: function (evt) {
+        // Find ancestor H3/H4 element, then set all checkboxes in the following sibling.
+        var element = $(evt.target).closest('h3,h4').next();
+        element.find('input').prop('checked', true);
+        evt.stopPropagation();
+    },
+
+    clearAllCheckboxes: function (evt) {
+        // Find ancestor H3/H4 element, then clear all checkboxes in the following sibling.
+        var element = $(evt.target).closest('h3,h4').next();
+        element.find('input').prop('checked', false);
+        evt.stopPropagation();
     },
 
     orderSpellsByFields: function () {

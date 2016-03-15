@@ -29,6 +29,4 @@ Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their
 
 "back" navigation for hyperlinks between spell descriptions.
 
-In spells known panel, "select all"/"clear all" controls for each accordion.
-
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
