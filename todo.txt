@@ -18,9 +18,6 @@ How will the final version work?
             * add/remove spells manually (including duplicates, metamagic feats)
     * prepared lists: save/load current selection as named list ("wilderness", "town", "infiltration" etc)
 
-Gaps:
-    * Doesn't know which classes are prepared and which are spontaneous.
-
 Current algorithm to get domains/bloodlines/patrons from sources is wrong, misses many.
 domains: actual 152 vs correct core/apg 124
 bloodlines: actual 42 vs correct core/apg 27
@@ -29,3 +26,9 @@ patrons: actual 37 vs correct core/apg 24
 Save current "screen" (selected book, current view) to globalSettings and display that on load.
 
 Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their spells known each day).
+
+"back" navigation for hyperlinks between spell descriptions.
+
+In spells known panel, "select all"/"clear all" controls for each accordion.
+
+Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
