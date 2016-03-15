@@ -159,3 +159,15 @@
 .spell.universal {
     background-color: white;
 }
+
+.slotTable {
+    margin-left: auto;
+    margin-right: auto;
+    border-collapse: collapse;
+    text-align: center;
+}
+
+.slotTable th, .slotTable td {
+    border: 1px solid black;
+    padding: 0 0.5em;
+}
