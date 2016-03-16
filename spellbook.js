@@ -70,8 +70,13 @@ var Storage = Class.create({
         $('input[name="' + name + '"]').val(value);
     },
 
-    get: function (name) {
-        return this.data[this.prefix + name];
+    get: function (name, defaultValue) {
+        var value = this.data[this.prefix + name];
+        if (value === undefined) {
+            return defaultValue;
+        } else {
+            return value;
+        }
     },
 
     getInt: function (name) {
@@ -403,6 +408,8 @@ var SpellData = Class.create({
 var BookKeys = {
     keyBookIDs: 'bookIDs',
     keyBookName: 'bookName',
+    keyCurrentBookID: 'currentBookID',
+    keyCurrentPanel: 'currentPanel',
     keySelectedSources: 'selectedSources',
     keySelectedClasses: 'selectedClasses',
     keySelectedBloodlines: 'selectedBloodlines',
@@ -428,7 +435,6 @@ var TopMenu = Class.create({
         $.each(bookIDs, $.proxy(function (index, bookID) {
             this.bookData[bookID] = new Storage(bookID);
         }, this));
-        this.refresh();
         // Create new elements in sub-menus
         $.each(this.spellData.sources, function (index, source) {
             var sourceLine = $(`<label><input type="checkbox" id="source_${source.toId()}" name="${source}" class="sourcebook"> ${source}</label>`)
@@ -450,17 +456,7 @@ var TopMenu = Class.create({
         $('body').on('tap', '.ui-widget-overlay', function (evt) {
             $('#spellPopup').dialog('close');
         });
-    },
-
-    refresh: function () {
-        var topdiv = $('#spellbooks');
-        topdiv.off();
-        topdiv.html('');
-        this.addNewBookButton();
-        $.each(this.bookData, $.proxy(function (id, storage) {
-            this.addBookButton(id, storage);
-        }, this));
-        topdiv.fadeIn();
+        this.setSelectedBook(this.globalSettings.get(BookKeys.keyCurrentBookID));
     },
 
     addNewBookButton: function () {
@@ -502,11 +498,33 @@ var TopMenu = Class.create({
     spellbookClicked: function (evt) {
         var target = evt.currentTarget;
         var id = $(target).attr('id');
-        if (!this.bookMenu[id]) {
-            this.bookMenu[id] = new BookMenu(id, this.bookData[id], this.spellData, this.globalSettings, this);
+        this.setSelectedBook(id);
+    },
+
+    setSelectedBook: function (bookID) {
+        if (bookID) {
+            this.globalSettings.set(BookKeys.keyCurrentBookID, bookID);
+            if (!this.bookMenu[bookID]) {
+                this.bookMenu[bookID] = new BookMenu(bookID, this.bookData[bookID], this.spellData, this.globalSettings, this);
+            }
+            this.selectedBook = this.bookMenu[bookID];
+            this.selectedBook.showBookMenu();
+        } else {
+            this.globalSettings.clear(BookKeys.keyCurrentBookID);
+            this.globalSettings.clear(BookKeys.keyCurrentPanel);
+            this.refresh();
         }
-        this.selectedBook = this.bookMenu[id]
-        this.selectedBook.showMenu();
+    },
+
+    refresh: function () {
+        var topdiv = $('#spellbooks');
+        topdiv.off();
+        topdiv.html('');
+        this.addNewBookButton();
+        $.each(this.bookData, $.proxy(function (id, storage) {
+            this.addBookButton(id, storage);
+        }, this));
+        topdiv.fadeIn();
     },
 
     deleteBook: function (id) {
@@ -531,12 +549,9 @@ var BookMenu = Class.create({
         this.spellData = spellData;
         this.globalSettings = globalSettings;
         this.topMenu = topMenu;
-        this.currentView = 'menu';
     },
 
-    showMenu: function () {
-        $('.panel').fadeOut();
-        $('#bookMenu').fadeIn();
+    showBookMenu: function () {
         // Load data
         this.selectedSources = this.storage.getArray(BookKeys.keySelectedSources);
         this.selectedClasses = this.storage.getArray(BookKeys.keySelectedClasses);
@@ -554,7 +569,6 @@ var BookMenu = Class.create({
         this.loadSpellsKnown(this.selectedBloodlines, 'Bloodline: ');
         this.loadSpellsKnown(this.selectedDomains, 'Domain: ');
         this.loadSpellsKnown(this.selectedPatrons, 'Patron: ');
-
         // Set up elements
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
@@ -603,6 +617,42 @@ var BookMenu = Class.create({
         $('#spellsPerDayPanelApply').on('tap', $.proxy(this.onSpellsPerDayPanelApply, this));
         $('#spellsKnownPanelApply').on('tap', $.proxy(this.onSpellsKnownPanelApply, this));
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
+        // Show current panel
+        this.setCurrentView(this.globalSettings.get(BookKeys.keyCurrentPanel, 'menu'));
+    },
+
+    setCurrentView: function (view) {
+        if (view == 'menu' || view != this.currentView) {
+            $('.panel').fadeOut();
+            this.currentView = view;
+            this.globalSettings.set(BookKeys.keyCurrentPanel, view);
+            if (view == 'menu') {
+                $('#bookMenu').fadeIn();
+            } else if (view == 'detailsPanel') {
+                $('#detailsPanel').fadeIn();
+                this.showDetailsPanel();
+            } else if (view == 'spellsPerDayPanel') {
+                $('#spellsPerDayPanel').fadeIn();
+                this.showPerDayPanel();
+            } else if (view == 'spellsKnownPanel') {
+                $('#spellsKnownPanel').fadeIn();
+                this.showKnownPanel();
+            } else if (view == 'adventuringPanel') {
+                $('#adventuringPanel').fadeIn();
+                this.showAdventuringPanel();
+            }
+        }
+    },
+
+    back: function () {
+        $('.panel').fadeOut();
+        if (this.currentView == 'menu') {
+            $('.ui-accordion').accordion('destroy');
+            $('#book *').off();
+            this.topMenu.setSelectedBook(null);
+        } else {
+            this.setCurrentView('menu');
+        }
     },
 
     loadSpellsPerDay: function (list, prefix) {
@@ -629,22 +679,8 @@ var BookMenu = Class.create({
         }, this));
     },
 
-    back: function () {
-        $('.panel').fadeOut();
-        if (this.currentView == 'menu') {
-            $('.ui-accordion').accordion('destroy');
-            $('#book *').off();
-            this.topMenu.refresh();
-        } else {
-            $('#bookMenu').fadeIn();
-            this.currentView = 'menu';
-        }
-    },
-
     showDetailsPanel: function () {
-        $('.panel').fadeOut();
-        $('#detailsPanel').fadeIn();
-        this.currentView = 'detailsPanel';
+        this.setCurrentView('detailsPanel');
         $('#spellbookNameInput').val(this.storage.get(BookKeys.keyBookName));
         this.resetDetailsCheckboxes();
     },
@@ -740,15 +776,13 @@ var BookMenu = Class.create({
         var name = this.storage.get(BookKeys.keyBookName);
         if (window.confirm('Do you really want to delete "' + name + '"?  All saved configuration will be lost.')) {
             this.topMenu.deleteBook(this.id);
-            this.currentView = 'menu';
+            this.setCurrentView('menu');
             this.back();
         }
     },
 
     showPerDayPanel: function () {
-        $('.panel').fadeOut();
-        $('#spellsPerDayPanel').fadeIn();
-        this.currentView = 'spellsPerDayPanel';
+        this.setCurrentView('spellsPerDayPanel');
         $('#spellsPerDayItems').html('');
         this.addClassSpellsPerDay();
     },
@@ -856,9 +890,7 @@ var BookMenu = Class.create({
     },
 
     showKnownPanel: function () {
-        $('.panel').fadeOut();
-        $('#spellsKnownPanel').fadeIn();
-        this.currentView = 'spellsKnownPanel';
+        this.setCurrentView('spellsKnownPanel');
         $('#spellsKnownPanel .ui-accordion').accordion('destroy');
         $('#spellListAccordion').html('');
         this.listSpellCategory(this.selectedClasses, '');
@@ -1000,9 +1032,7 @@ var BookMenu = Class.create({
     },
 
     showAdventuringPanel: function () {
-        $('.panel').fadeOut();
-        $('#adventuringPanel').fadeIn();
-        this.currentView = 'adventuringPanel';
+        this.setCurrentView('adventuringPanel');
         $('#adventuringSpells').off('.adventureControl');
         $('#adventuringSpells').html('');
         this.addAdventuringCategory(this.selectedClasses, '', this.classSlots);
