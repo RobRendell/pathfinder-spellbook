@@ -3,21 +3,6 @@ Also download feats from pathfindercommunity.net too, to get Metamagic feats?
     regex: (uses|takes) (up )?a (spell )?slot
     Some descriptions use words (one, two), some a digits (2)
 
-How will the final version work?
-* Choose sources/class(es)/bloodlines/domains/patrons/school
-* Configure spells per day
-    * For each class/bloodline/domain/patron/spell school, choose prepared (all spells), prepared (selection) or
-        spontaneous, nominate # of spells per day of each level
-* Pick spells known/spells in spellbook
-    * Option to add bloodline spells, patron spells
-* Track spells today:
-    * spontaneous classes just list spells known and show a slot counter per-level which can be incremented/decremented
-    * cross spells (or slots) off. Also can un-cross (Pearl of Power etc).
-    * rest to restore everything
-        * prepared lists can be changed at this time:
-            * add/remove spells manually (including duplicates, metamagic feats)
-    * prepared lists: save/load current selection as named list ("wilderness", "town", "infiltration" etc)
-
 Current algorithm to get domains/bloodlines/patrons from sources is wrong, misses many.
 domains: actual 152 vs correct core/apg 124
 bloodlines: actual 42 vs correct core/apg 27
@@ -28,3 +13,13 @@ Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their
 "back" navigation for hyperlinks between spell descriptions.
 
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
+
+In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
+
+Opposing Schools that take up two spell slots
+
+Metamagic feats (or at least, the ability to memorize lower-level spells into a higher-level slot and note the level difference).
+
+For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
+
+"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.

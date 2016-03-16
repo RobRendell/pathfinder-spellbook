@@ -61,7 +61,7 @@
     cursor: pointer;
 }
 
-#detailsAccordion, #spellListAccordion {
+#detailsAccordion, #spellListAccordion, #preparedSpells {
     width: 90%;
 }
 
@@ -69,7 +69,7 @@
     display: block;
 }
 
-.accordion div + h4, .accordion div + h3 {
+.ui-accordion div + h4, .ui-accordion div + h3 {
     margin-top: 0.5cm !important;
 }
 
@@ -126,7 +126,7 @@
 
 .spell .view {
     flex-grow: 0;
-    padding-right: 1em;
+    padding: 0 0.5em;
     cursor: pointer;
 }
 
@@ -168,6 +168,33 @@
 }
 .spell.universal {
     background-color: white;
+}
+
+.slotDiv {
+    display: inline-block;
+    border: 1px solid black;
+    margin: -1em 0 0.5em 0;
+    padding: 0 0.5em;
+    text-align: center;
+}
+
+.prepareCategory {
+    width: 42em;
+    margin: 0 auto;
+}
+
+.prepareCategory > div {
+    display: flex;
+}
+
+.prepareCategory > div > div {
+    flex: 1;
+    border: 1px solid black;
+    padding: 0.5em;
+}
+
+.droppableHighlight {
+    border: 1px solid cyan !important;
 }
 
 .slotTable {

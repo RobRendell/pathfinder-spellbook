@@ -20,6 +20,14 @@ $.fn.presence = function () {
     return this.length !== 0 && this;
 }
 
+$.fn.setVisible = function (visible) {
+    if (visible) {
+        this.show();
+    } else {
+        this.hide();
+    }
+}
+
 var Class = {
     create: function(settings) {
         var newClass = function() {
@@ -287,7 +295,8 @@ var SpellData = Class.create({
             if (spell[classHeading] === 'NULL' || spell[classHeading] === undefined) {
                 spell[classHeading] = undefined;
             } else {
-                var value = parseInt(spell[classHeading]);
+                spell[classHeading] = parseInt(spell[classHeading]);
+                var value = spell[classHeading];
                 if (!map[classHeading] || value > map[classHeading]) {
                     map[classHeading] = value;
                 }
@@ -419,7 +428,8 @@ var BookKeys = {
     keySlotType: 'slotType_',
     keySlots: 'slots_',
     keySlotsToday: 'slotsToday_',
-    keyKnown: 'known_'
+    keyKnown: 'known_',
+    keyPrepared: 'prepared_'
 };
 
 var TopMenu = Class.create({
@@ -569,6 +579,11 @@ var BookMenu = Class.create({
         this.loadSpellsKnown(this.selectedBloodlines, 'Bloodline: ');
         this.loadSpellsKnown(this.selectedDomains, 'Domain: ');
         this.loadSpellsKnown(this.selectedPatrons, 'Patron: ');
+        this.preparedSpells = {}
+        this.loadSpellsPrepared(this.selectedClasses, '');
+        this.loadSpellsPrepared(this.selectedBloodlines, 'Bloodline: ');
+        this.loadSpellsPrepared(this.selectedDomains, 'Domain: ');
+        this.loadSpellsPrepared(this.selectedPatrons, 'Patron: ');
         // Set up elements
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
@@ -617,6 +632,8 @@ var BookMenu = Class.create({
         $('#spellsPerDayPanelApply').on('tap', $.proxy(this.onSpellsPerDayPanelApply, this));
         $('#spellsKnownPanelApply').on('tap', $.proxy(this.onSpellsKnownPanelApply, this));
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
+        $('#adventuringChangeSpellsButton').on('tap', $.proxy(this.onAdventuringChangeSpellsButton, this));
+        $('#prepareSpellsApplyButton').on('tap', $.proxy(this.onPrepareSpellsApplyButton, this));
         // Show current panel
         this.setCurrentView(this.globalSettings.get(BookKeys.keyCurrentPanel, 'menu'));
     },
@@ -640,6 +657,11 @@ var BookMenu = Class.create({
             } else if (view == 'adventuringPanel') {
                 $('#adventuringPanel').fadeIn();
                 this.showAdventuringPanel();
+            } else if (view == 'prepareSpellsPanel') {
+                $('#prepareSpellsPanel').fadeIn();
+                this.showPrepareSpellsPanel();
+            } else {
+                console.error('Unknown view name: ' + view);
             }
         }
     },
@@ -650,6 +672,8 @@ var BookMenu = Class.create({
             $('.ui-accordion').accordion('destroy');
             $('#book *').off();
             this.topMenu.setSelectedBook(null);
+        } else if (this.currentView == 'prepareSpellsPanel') {
+            this.setCurrentView('adventuringPanel');
         } else {
             this.setCurrentView('menu');
         }
@@ -674,8 +698,30 @@ var BookMenu = Class.create({
     loadSpellsKnown: function (list, prefix) {
         $.each(list, $.proxy(function (index, value) {
             value = prefix + value;
-            var spells = this.storage.getArray(BookKeys.keyKnown + value.toId());
-            this.knownSpells[value] = spells;
+            var spellKeys = this.storage.getArray(BookKeys.keyKnown + value.toId());
+            this.knownSpells[value] = this.parseLevelsAndSpellKeys(spellKeys);
+        }, this));
+    },
+
+    parseLevelsAndSpellKeys: function (list) {
+        var result = {};
+        var currentLevel;
+        $.each(list, function (index, spellKey) {
+            if (isNaN(parseInt(spellKey))) {
+                result[currentLevel].push(spellKey);
+            } else {
+                currentLevel = parseInt(spellKey);
+                result[currentLevel] = [];
+            }
+        });
+        return result;
+    },
+
+    loadSpellsPrepared: function (list, prefix) {
+        $.each(list, $.proxy(function (index, value) {
+            value = prefix + value;
+            var spellKeys = this.storage.getArray(BookKeys.keyPrepared + value.toId());
+            this.preparedSpells[value] = this.parseLevelsAndSpellKeys(spellKeys);
         }, this));
     },
 
@@ -835,11 +881,7 @@ var BookMenu = Class.create({
         title.append(control);
         var tableId = value.toId() + '_slots';
         control.on('change', $.proxy(function (evt) {
-            if (control.val() == this.textNotSlots) {
-                $('#' + tableId).hide();
-            } else {
-                $('#' + tableId).show();
-            }
+            $('#' + tableId).setVisible(control.val() != this.textNotSlots);
         }, this));
         control.val(slotData.slotType || defaultValue);
         topDiv.append(title);
@@ -914,41 +956,43 @@ var BookMenu = Class.create({
             headingElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
             var categoryDiv = $('<div/>').addClass('accordion').addClass(value.toId());
             this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
-            var lastLevel, currentDiv;
+            var currentLevel, currentDiv;
             $.each(this.spellData.rawData, $.proxy(function (index, spell) {
                 if (spell[value] !== undefined && this.selectedSources.indexOf(spell.source) >= 0) {
-                    if (spell[value] != lastLevel) {
-                        lastLevel = spell[value];
-                        var levelElt = $('<h4 />').text('Level ' + lastLevel);
+                    if (spell[value] != currentLevel) {
+                        currentLevel = spell[value];
+                        var levelElt = $('<h4 />').text('Level ' + currentLevel);
                         levelElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
                         levelElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
                         categoryDiv.append(levelElt);
                         currentDiv = $('<div />');
                         categoryDiv.append(currentDiv);
                     }
-                    this.appendSpellLine(currentDiv, spell, this.knownSpells[value]);
+                    this.appendSpellLine(currentDiv, spell, (this.knownSpells[value][currentLevel] !== undefined &&
+                            this.knownSpells[value][currentLevel].indexOf(spell.name.toLowerCase()) >= 0));
                 }
             }, this));
             accordion.append(categoryDiv);
         }, this));
     },
 
-    appendSpellLine: function (element, spell, known) {
+    appendSpellLine: function (element, spell, known, overLevel) {
         var line = $('<label class="spell" />');
         line.addClass(spell.school);
         line.append($('<span />').addClass('title').text(spell.name));
+        if (known !== undefined) {
+            var spellKey = spell.name.toLowerCase();
+            line.append($(`<input type="checkbox" name="${spellKey}" />`).prop('checked', known));
+        }
+        if (overLevel == 1) {
+            line.append($('<span />').text('(1 level over)'));
+        } else if (overLevel > 0) {
+            line.append($('<span />').text('(' + overLevel + ' levels over)'));
+        }
         line.append($('<span/>').addClass('view').html('&#x1f441;').on('tap', $.proxy(function (evt) {
             this.displaySpellDetails(spell);
             evt.preventDefault();
         }, this)));
-        if (known) {
-            var spellNameLower = spell.name.toLowerCase();
-            if (known.indexOf(spellNameLower) >= 0) {
-                line.append($(`<input type="checkbox" name="${spellNameLower}" checked="checked"/>`));
-            } else {
-                line.append($(`<input type="checkbox" name="${spellNameLower}" />`));
-            }
-        }
         element.append(line);
         return line;
     },
@@ -1007,27 +1051,45 @@ var BookMenu = Class.create({
 
     spellHyperlink: function (evt) {
         evt.preventDefault();
-        var spellName = $(evt.target).text().toLowerCase();
-        this.displaySpellDetails(this.spellData.spellByName[spellName]);
+        var spellKey = $(evt.target).text().toLowerCase();
+        this.displaySpellDetails(this.spellData.spellByName[spellKey]);
     },
 
     onSpellsKnownPanelApply: function () {
-        this.saveSpellsKnown(this.selectedClasses, '');
-        this.saveSpellsKnown(this.selectedBloodlines, 'Bloodline: ');
-        this.saveSpellsKnown(this.selectedDomains, 'Domain: ');
-        this.saveSpellsKnown(this.selectedPatrons, 'Patron: ');
+        this.knownSpells = {};
+        this.buildSpellsKnown(this.selectedClasses, '');
+        this.buildSpellsKnown(this.selectedBloodlines, 'Bloodline: ');
+        this.buildSpellsKnown(this.selectedDomains, 'Domain: ');
+        this.buildSpellsKnown(this.selectedPatrons, 'Patron: ');
+        this.saveKnownOrPreparedSpells(BookKeys.keyKnown, this.knownSpells);
         this.back();
     },
 
-    saveSpellsKnown: function (list, prefix) {
+    buildSpellsKnown: function (list, prefix) {
         $.each(list, $.proxy(function (index, value) {
-            value = prefix + value;
-            var spells = [];
-            $(`.${value.toId()} :checked`).each(function (index, input) {
-                spells.push($(input).attr('name'));
-            });
-            this.storage.set(BookKeys.keyKnown + value.toId(), spells);
-            this.knownSpells[value] = spells;
+            var category = prefix + value;
+            var known = {};
+            $(`.${category.toId()} :checked`).each($.proxy(function (index, input) {
+                var spellKey = $(input).attr('name');
+                var spell = this.spellData.spellByName[spellKey];
+                var level = spell[category];
+                if (!known[level]) {
+                    known[level] = [];
+                }
+                known[level].push(spellKey);
+            }, this));
+            this.knownSpells[category] = known;
+        }, this));
+    },
+
+    saveKnownOrPreparedSpells: function (key, spellMap) {
+        $.each(spellMap, $.proxy(function (category, spellsByLevel) {
+            var save = [];
+            $.each(spellsByLevel, $.proxy(function (level, spellKeyList) {
+                save.push(level);
+                save.push.apply(save, spellKeyList);
+            }, this));
+            this.storage.set(key + category.toId(), save);
         }, this));
     },
 
@@ -1035,18 +1097,17 @@ var BookMenu = Class.create({
         this.setCurrentView('adventuringPanel');
         $('#adventuringSpells').off('.adventureControl');
         $('#adventuringSpells').html('');
+        $('#adventuringRestButton').hide();
+        $('#adventuringChangeSpellsButton').hide();
         this.addAdventuringCategory(this.selectedClasses, '', this.classSlots);
         this.addAdventuringCategory(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots);
         this.addAdventuringCategory(this.selectedDomains, 'Domain: ', this.domainSlots);
-        this.addAdventuringCategory(this.selectedPatron, 'Patron: ', this.patronSlots);
+        this.addAdventuringCategory(this.selectedPatrons, 'Patron: ', this.patronSlots);
         this.addAdventuringCategory(this.selectedSchool, 'School: ', this.schoolSlots);
     },
 
     addAdventuringCategory: function (list, prefix, categorySlotData) {
         var topDiv = $('#adventuringSpells');
-        if (!list) {
-            return;
-        }
         $.each(list, $.proxy(function (index, value) {
             value = prefix + value;
             var name = (prefix) ? value : this.spellData.classNames[value];
@@ -1056,57 +1117,59 @@ var BookMenu = Class.create({
             }
             topDiv.append($('<h4/>').text(name));
             if (slotData.slotType != this.textNotSlots) {
-                var table = $('<table class="slotTable" />');
-                topDiv.append(table);
-                var row1 = $('<tr/>');
-                var row2 = $('<tr/>');
-                $.each(slotData.slots, $.proxy(function (index, spellsPerDay) {
-                    if (slotData.slotsToday.length - 1 < index) {
-                        slotData.slotsToday.push(spellsPerDay);
-                    }
-                    if (spellsPerDay > 0) {
-                        row1.append($('<th/>').text(index.ordinal() + ' level'));
-                        var td = $('<td/>');
-                        row2.append(td);
-                        if (slotData.slotType == this.textSpontaneousSlots) {
-                            this.createCheckboxControl(td, spellsPerDay, slotData.slotsToday, index, value);
-                        } else {
-                            td.text(spellsPerDay);
-                        }
-                    }
-                }, this));
-                table.append(row1);
-                table.append(row2);
-                this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
-                var spellsToday = this.knownSpells[value];
+                var spellsToday;
                 if (slotData.slotType == this.textPreparedSlots) {
-                    spellsToday = []; // TODO this.preparedSpells[value];
+                    spellsToday = this.preparedSpells[value] || {};
+                    $('#adventuringChangeSpellsButton').show();
+                } else {
+                    spellsToday = this.knownSpells[value] || {};
                 }
-                var lastLevel, currentDiv, tapFn, pressFn;
-                $.each(this.spellData.rawData, $.proxy(function (index, spell) {
-                    if (spell[value] !== undefined && spellsToday.indexOf(spell.name.toLowerCase()) >= 0) {
-                        if (spell[value] != lastLevel) {
-                            lastLevel = spell[value];
-                            topDiv.append($('<h4 />').text('Level ' + lastLevel));
-                            currentDiv = $('<div />');
-                            topDiv.append(currentDiv);
-                            if (slotData.slotType == this.textSpontaneousSlots) {
-                                var checkboxElementId = `slot_${value.toId()}_${lastLevel}`;
-                                tapFn = $.proxy(function (evt) {
-                                    this.checkboxInteraction($('#' + checkboxElementId), -1);
-                                }, this);
-                                pressFn = $.proxy(function (evt) {
-                                    this.checkboxInteraction($('#' + checkboxElementId), 1);
-                                }, this);
-                                currentDiv.addClass(checkboxElementId);
-                                if (slotData.slots[lastLevel] > 0 && slotData.slotsToday[lastLevel] == 0) {
-                                    currentDiv.fadeTo(0, 0.3);
-                                }
-                            }
+                if (Object.keys(spellsToday).length > 0) {
+                    $('#adventuringRestButton').show();
+                }
+                $.each(spellsToday, $.proxy(function (level, spellKeyList) {
+                    if (slotData.slots[level] == 0 && spellKeyList.length == 0) {
+                        return;
+                    }
+                    topDiv.append($('<h4 />').text('Level ' + level));
+                    if (slotData.slotType == this.textSpontaneousSlots) {
+                        var slotDiv = $('<div class="slotDiv" />');
+                        if (slotData.slots[level] > 0) {
+                            this.createCheckboxControl(slotDiv, slotData.slots[level], slotData.slotsToday, level, value);
+                        } else {
+                            slotDiv.text('At will');
                         }
-                        var element = this.appendSpellLine(currentDiv, spell);
+                        topDiv.append(slotDiv);
+                    }
+                    var currentDiv = $('<div />');
+                    topDiv.append(currentDiv);
+                    var tapFn, pressFn;
+                    if (slotData.slotType == this.textSpontaneousSlots) {
+                        var checkboxElementId = `slot_${value.toId()}_${level}`;
+                        tapFn = $.proxy(function (evt) {
+                            this.checkboxInteraction($('#' + checkboxElementId), -1);
+                        }, this);
+                        pressFn = $.proxy(function (evt) {
+                            this.checkboxInteraction($('#' + checkboxElementId), 1);
+                        }, this);
+                        currentDiv.addClass(checkboxElementId);
+                        if (slotData.slots[level] > 0 && slotData.slotsToday[level] == 0) {
+                            currentDiv.fadeTo(0, 0.3);
+                        }
+                    }
+                    $.each(spellKeyList.sort(), $.proxy(function (index, spellKey) {
+                        var spell = this.spellData.spellByName[spellKey];
+                        var element = this.appendSpellLine(currentDiv, spell, undefined, level - spell[value]);
                         element.on('tap.adventureControl', tapFn);
                         element.on('press.adventureControl', pressFn);
+                    }, this));
+                    if (slotData.slotType == this.textPreparedSlots) {
+                        var unused = slotData.slots[level] - spellKeyList.length;
+                        if (unused == 1) {
+                            currentDiv.append($('<div/>').text('1 unused spell slot'));
+                        } else if (unused > 0) {
+                            currentDiv.append($('<div/>').text(unused + ' unused spell slots'));
+                        }
                     }
                 }, this));
             }
@@ -1116,10 +1179,10 @@ var BookMenu = Class.create({
     createCheckboxControl: function (element, spellsPerDay, slotsToday, slotKey, heading) {
         element.prop('id', `slot_${heading.toId()}_${slotKey}`);
         element.addClass('checkboxControl');
-        element.data('psb.spellsPerDay', spellsPerDay);
-        element.data('psb.slotsToday', slotsToday);
-        element.data('psb.slotKey', slotKey);
-        element.data('psb.heading', heading);
+        element.data('psb_spellsPerDay', spellsPerDay);
+        element.data('psb_slotsToday', slotsToday);
+        element.data('psb_slotKey', slotKey);
+        element.data('psb_heading', heading);
         this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey]);
         element.on('tap.adventureControl', $.proxy(this.checkboxTouchHandler, this));
         element.on('press.adventureControl', $.proxy(this.checkboxTouchHandler, this));
@@ -1132,10 +1195,10 @@ var BookMenu = Class.create({
 
     checkboxInteraction: function (element, delta) {
         if (element.presence()) {
-            var spellsPerDay = element.data('psb.spellsPerDay');
-            var slotsToday = element.data('psb.slotsToday');
-            var slotKey = element.data('psb.slotKey');
-            var heading = element.data('psb.heading');
+            var spellsPerDay = element.data('psb_spellsPerDay');
+            var slotsToday = element.data('psb_slotsToday');
+            var slotKey = element.data('psb_slotKey');
+            var heading = element.data('psb_heading');
             if (slotsToday[slotKey] + delta <= spellsPerDay && slotsToday[slotKey] + delta >= 0) {
                 slotsToday[slotKey] += delta;
                 this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey]);
@@ -1166,6 +1229,10 @@ var BookMenu = Class.create({
 
     onAdventuringRestButton: function (evt) {
         this.categoryRest(this.selectedClasses, '', this.classSlots);
+        this.categoryRest(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots);
+        this.categoryRest(this.selectedDomains, 'Domain: ', this.domainSlots);
+        this.categoryRest(this.selectedPatrons, 'Patron: ', this.patronSlots);
+        this.categoryRest(this.selectedSchool, 'School: ', this.schoolSlots);
         $('.checkboxControl').each($.proxy(function (index, element) {
             this.checkboxInteraction($(element), 0);
         }, this));
@@ -1188,7 +1255,148 @@ var BookMenu = Class.create({
                 this.storage.set(BookKeys.keySlotsToday + value.toId(), slotData.slotsToday);
             }
         }, this));
-    }
+    },
+
+    onAdventuringChangeSpellsButton: function () {
+        this.setCurrentView('prepareSpellsPanel');
+    },
+
+    showPrepareSpellsPanel: function () {
+        this.copyPreparedSpells = $.extend(true, {}, this.preparedSpells);
+        $('#preparedSpells .ui-accordion').accordion('destroy');
+        $('#preparedSpells .ui-draggable').draggable('destroy');
+        $('#preparedSpells .ui-droppable').droppable('destroy');
+        $('#preparedSpells').html('');
+        this.createPrepareSpellSection(this.selectedClasses, '', this.classSlots);
+        this.createPrepareSpellSection(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots);
+        this.createPrepareSpellSection(this.selectedDomains, 'Domain: ', this.domainSlots);
+        this.createPrepareSpellSection(this.selectedPatrons, 'Patron: ', this.patronSlots);
+        this.createPrepareSpellSection(this.selectedSchool, 'School: ', this.schoolSlots);
+        $('#preparedSpells').accordion({
+            collapsible: true,
+            heightStyle: "content"
+        });
+    },
+
+    createPrepareSpellSection: function (list, prefix, categorySlotData) {
+        $.each(list, $.proxy(function (index, value) {
+            value = prefix + value;
+            var slotData = categorySlotData[value];
+            if (slotData && slotData.slotType == this.textPreparedSlots) {
+                var name = (prefix) ? value : this.spellData.classNames[value];
+                $('#preparedSpells').append($('<h3 />').text(name));
+                var currentDiv = $('<div class="prepareCategory" />').addClass(value.toId());
+                $('#preparedSpells').append(currentDiv);
+                this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
+                if (!this.knownSpells[value]) {
+                    this.knownSpells[value] = {};
+                }
+                if (!this.copyPreparedSpells[value]) {
+                    this.copyPreparedSpells[value] = {};
+                }
+                var knownDiv, preparedDiv;
+                var acceptSelector = 'noSuchThing';
+                var maxLevel = 9; // TODO
+                for (var level = 0; level < maxLevel; ++level) {
+                    if (!this.knownSpells[value][level]) {
+                        this.knownSpells[value][level] = [];
+                    }
+                    if (!this.copyPreparedSpells[value][level]) {
+                        this.copyPreparedSpells[value][level] = [];
+                    }
+                    knownDiv = $('<div />').addClass('knownSpellsDiv').text('Known spells')
+                            .droppable({ accept: '.preparedSpell', hoverClass: 'droppableHighlight' })
+                            .data('psb_category', value);
+                    acceptSelector += ',.knownSpell' + level;
+                    preparedDiv = $('<div />').text('Prepared spells')
+                            .data('psb_slots', slotData.slots[level])
+                            .prop('id', `preparedDiv_${value.toId()}_${level}`)
+                            .data('psb_accept_backup', acceptSelector)
+                            .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' });
+                    currentDiv.append($('<h4 />').text(level.ordinal() + ' level - ' + slotData.slots[level] + ' slots'));
+                    currentDiv.append($('<div />').append(knownDiv).append(preparedDiv));
+                    this.updatePreparedDivText(level, value);
+                    preparedDiv.data('psb_category', value);
+                    preparedDiv.data('psb_level', level);
+                    knownDiv.on('drop', $.proxy(this.dropSpell, this));
+                    preparedDiv.on('drop', $.proxy(this.dropSpell, this));
+                    $.each(this.knownSpells[value][level].sort(), $.proxy(function (index, spellKey) {
+                        var spell = this.spellData.spellByName[spellKey];
+                        this.appendSpellLine(knownDiv, spell).addClass('knownSpell' + level)
+                        .draggable({
+                            'helper': 'clone',
+                            'containment': currentDiv,
+                            'revert': 'invalid'
+                        });
+                    }, this));
+                    $.each(this.copyPreparedSpells[value][level].sort(), $.proxy(function (index, spellKey) {
+                        var spell = this.spellData.spellByName[spellKey];
+                        this.addPreparedSpell(spell, level, value);
+                    }, this));
+                }
+            }
+        }, this));
+    },
+
+    addPreparedSpell: function (spell, level, category) {
+        var overLevel = level - spell[category];
+        this.appendSpellLine($(`#preparedDiv_${category.toId()}_${level}`), spell, undefined, overLevel)
+                .data('psb_preparedLevel', level)
+                .addClass('preparedSpell')
+                .draggable({
+                    'containment': '.prepareCategory.' + category.toId(),
+                    'revert': 'invalid'
+                });
+        this.updatePreparedDivText(level, category);
+    },
+
+    updatePreparedDivText: function (level, category) {
+        var preparedDiv = $(`#preparedDiv_${category.toId()}_${level}`);
+        var slotsLeft = preparedDiv.data('psb_slots') - this.copyPreparedSpells[category][level].length;
+        if (slotsLeft == 0) {
+            preparedDiv.contents().first().replaceWith('Prepared spells - no slots remaining');
+            preparedDiv.droppable('option', 'accept', 'noSuchThing');
+        } else if (slotsLeft == 1) {
+            preparedDiv.contents().first().replaceWith('Prepared spells - 1 slot remaining');
+            preparedDiv.droppable('option', 'accept', preparedDiv.data('psb_accept_backup'));
+        } else {
+            preparedDiv.contents().first().replaceWith('Prepared spells - ' + slotsLeft + ' slots remaining');
+        }
+    },
+
+    dropSpell: function (evt, ui) {
+        var droppable = $(evt.target);
+        var category = droppable.data('psb_category');
+        var spellName = ui.draggable.find('.title').text();
+        var spellKey = spellName.toLowerCase();
+        var spell = this.spellData.spellByName[spellName.toLowerCase()];
+        var level;
+        if (droppable.is('.knownSpellsDiv')) {
+            ui.draggable.hide();
+            level = $(ui.draggable.context).data('psb_preparedLevel');
+            var index = this.copyPreparedSpells[category][level].indexOf(spellKey);
+            if (index >= 0) {
+                this.copyPreparedSpells[category][level].splice(index, 1);
+                this.updatePreparedDivText(level, category);
+            }
+        } else {
+            level = droppable.data('psb_level');
+            if (!this.copyPreparedSpells[category]) {
+                this.copyPreparedSpells[category] = {};
+            }
+            if (!this.copyPreparedSpells[category][level]) {
+                this.copyPreparedSpells[category][level] = [];
+            }
+            this.copyPreparedSpells[category][level].push(spellKey);
+            this.addPreparedSpell(spell, level, category);
+        }
+    },
+
+    onPrepareSpellsApplyButton: function () {
+        this.preparedSpells = this.copyPreparedSpells;
+        this.saveKnownOrPreparedSpells(BookKeys.keyPrepared, this.preparedSpells);
+        this.back();
+    },
 
 });
 
