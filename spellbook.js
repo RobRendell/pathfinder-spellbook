@@ -1251,9 +1251,7 @@ var BookMenu = Class.create({
         var category = spellDiv.parent().data('psb_category');
         var prepared = this.preparedSpells[category][level];
         var index = prepared.indexOf(from);
-        if (index < 0) {
-            console.error(`Unable to find entry "${from}" in category ${category} of level ${level}.`);
-        } else {
+        if (index >= 0) {
             prepared[index] = to;
             this.saveKnownOrPreparedSpells(BookKeys.keyPrepared, this.preparedSpells);
         }
@@ -1457,8 +1455,8 @@ $(document).ready(function () {
     globalSettings.setDefault('dataSize', 8003493);
     $('#loadingMessage').text('Loading spell list from pathfindercommunity.net...');
     $('#progress').progressbar({ max: globalSettings.getInt('dataSize'), value: 0 });
+    $('#loading').show();
     // Now load the data.
-    /*
     $.ajax({
         url: 'https://spreadsheets.google.com/pub?key=0AhwDI9kFz9SddG5GNlY5bGNoS2VKVC11YXhMLTlDLUE&output=csv',
         xhr: function () {
@@ -1504,7 +1502,7 @@ $(document).ready(function () {
         $('#loading').text('Error: ' + err);
         $('#loading').fadeIn();
     });
-    */
+    /*
     $('.panel').hide();
     $.csv.toObjects(globalSpellCsv, {}, function (err, spellList) {
         if (err) {
@@ -1520,4 +1518,5 @@ $(document).ready(function () {
             });
         }
     });
+    */
 });
