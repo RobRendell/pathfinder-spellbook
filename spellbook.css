@@ -142,6 +142,11 @@
 .spell .title {
 }
 
+.spell.used {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
 .spell.abjuration {
     background-color: #99ff99;
 }

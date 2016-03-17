@@ -23,3 +23,9 @@ Metamagic feats (or at least, the ability to memorize lower-level spells into a 
 For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
 
 "Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
+
+Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
+
+Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
+
+Fix checkbox list (spontaneous casters) outside of level's div, using next() instead of parent() in checkboxInteraction();
