@@ -29,3 +29,9 @@ Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
 Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
 
 Fix checkbox list (spontaneous casters) outside of level's div, using next() instead of parent() in checkboxInteraction();
+
+Spell details dialog doesn't always appear in visible screen area (if scrolled down).
+
+Try to get the known spell checkbox into top-right corner of spell (overlap view icon space) for small screens.
+
+Spell "card" could be wide on adventuring tab (and spells known?) - only needs to be narrow/fat on preparing spells panel.

@@ -9,11 +9,10 @@ String.prototype.toTitleCase = function () {
     });
 }
 
-Number.prototype.ordinal = function (n) {
-    n = (n !== undefined) ? n : this;
+Number.prototype.ordinal = function () {
     var suffix = ["th","st","nd","rd"];
-    var value = n%100;
-    return n + (suffix[(value-20)%10] || suffix[value] || suffix[0]);
+    var value = this % 100;
+    return this + (suffix[(value-20)%10] || suffix[value] || suffix[0]);
 }
 
 $.fn.presence = function () {
@@ -879,28 +878,22 @@ var BookMenu = Class.create({
         control.append($('<option/>').text(this.textSpontaneousSlots));
         control.append($('<option/>').text(this.textNotSlots));
         title.append(control);
-        var tableId = value.toId() + '_slots';
+        var slotDivId = value.toId() + '_slots';
         control.on('change', $.proxy(function (evt) {
-            $('#' + tableId).setVisible(control.val() != this.textNotSlots);
+            $('#' + slotDivId).setVisible(control.val() != this.textNotSlots);
         }, this));
         control.val(slotData.slotType || defaultValue);
         topDiv.append(title);
-        var table = $('<table />').attr('id', tableId);
-        var row = $('<tr />');
+        var slotsDiv = $('<div />').addClass('allSlots').attr('id', slotDivId);
         for (var level = 0; level <= maxLevel; ++level) {
-            row.append($('<td />').text(Number.prototype.ordinal(level) + " level"));
-        }
-        table.append(row);
-        row = $('<tr />');
-        for (var level = 0; level <= maxLevel; ++level) {
-            var data = $('<td />');
+            var slot = $('<div/>').addClass('spellsPerDaySlot');
+            slot.append($('<div/>').text(level.ordinal() + ' level'));
             var inputElement = $(`<input type="number" step="1" class="spellPerDay_${value.toId()}" />`);
-            data.append(inputElement);
+            slot.append($('<div/>').append(inputElement));
             inputElement.val(slotData.slots[level] || 0);
-            row.append(data);
+            slotsDiv.append(slot);
         }
-        table.append(row);
-        topDiv.append(table);
+        topDiv.append(slotsDiv);
         $('#spellsPerDayItems').append(topDiv);
         control.trigger('change');
     },
@@ -985,13 +978,13 @@ var BookMenu = Class.create({
             line.append($(`<input type="checkbox" name="${spellKey}" />`).prop('checked', known));
         }
         if (overLevel == 1) {
-            line.append($('<span />').text('(1 level over)'));
+            line.append($('<span class="note" />').text('(1 level over)'));
         } else if (overLevel > 0) {
-            line.append($('<span />').text('(' + overLevel + ' levels over)'));
+            line.append($('<span class="note" />').text('(' + overLevel + ' levels over)'));
         }
-        line.append($('<span/>').addClass('view').html('&#x1f441;').on('tap', $.proxy(function (evt) {
+        line.append($('<div/>').addClass('view').append($('<img src="eye.svg"/>')).on('tap', $.proxy(function (evt) {
             this.displaySpellDetails(spell);
-            evt.preventDefault();
+            evt.stopPropagation();
         }, this)));
         element.append(line);
         return line;
@@ -1045,7 +1038,9 @@ var BookMenu = Class.create({
                 content = content.substr(0, mythicMatch.index);
             }
         }
-        $('#spellPopup').html(content).dialog('option', 'title', spell.name).dialog('open');
+        $('#spellPopup').html(content).dialog('option', 'title', spell.name)
+                .dialog('option', 'position', { my: 'left top', at: 'left top', of: window })
+                .dialog('open');
         $('#spellPopup a').on('tap', $.proxy(this.spellHyperlink, this));
     },
 

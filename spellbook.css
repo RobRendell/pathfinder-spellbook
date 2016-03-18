@@ -1,6 +1,11 @@
+
+body {
+    background-color: #F1EDC2;
+}
+
 .panel {
     position: absolute;
-    width: 100%;
+    width: 95%;
     display: none;
 }
 
@@ -15,6 +20,7 @@
     font-size: 16pt;
     text-align: center;
     cursor: pointer;
+    background: #eee url("images/ui-bg_highlight-soft_100_eeeeee_1x100.png") 50% top repeat-x;
 }
 
 .book img {
@@ -25,9 +31,20 @@
 }
 
 .back {
-    background-color: grey;
+    background-color: #aaa;
     font-size: 16pt;
     cursor: pointer;
+    width: 95%;
+    height: 2em;
+    position: fixed;
+    top: 0;
+    left: 0;
+    padding: 0 2.5%;
+    z-index: 10;
+}
+
+.back + * {
+    margin-top: 3em;
 }
 
 .back span {
@@ -59,6 +76,7 @@
     margin: 0.5cm auto;
     padding: 10px;
     cursor: pointer;
+    background: #eee url("images/ui-bg_highlight-soft_100_eeeeee_1x100.png") 50% top repeat-x;
 }
 
 #detailsAccordion, #spellListAccordion, #preparedSpells {
@@ -67,6 +85,10 @@
 
 #detailsAccordion label {
     display: block;
+}
+
+.ui-accordion h4, h3 {
+    overflow: hidden;
 }
 
 .ui-accordion div + h4, .ui-accordion div + h3 {
@@ -84,29 +106,26 @@
 }
 
 .spellsPerDaySlotType {
-    margin-left: 4em;
+    float: right;
 }
 
 .spellsPerDay {
     margin-bottom: 3em;
 }
 
-.spellsPerDay table {
-    margin-left: auto;
-    margin-right: auto;
-    border-collapse: collapse;
+.spellsPerDay .allSlots {
+    clear: both;
 }
 
-.spellsPerDay td {
-    padding-left: 0.5rem;
-    padding-right: 0.5rem;
-}
-
-.spellsPerDay td+td {
+.spellsPerDaySlot {
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    display: inline-block;
     border-left: 1px solid #999;
+    border-right: 1px solid #999;
 }
 
-.spellsPerDay input {
+.spellsPerDaySlot input {
     width: 4em;
 }
 
@@ -114,6 +133,7 @@
     width: 20em;
     margin-left: auto;
     margin-right: auto;
+    border: 1px solid #777;
     display: flex;
     justify-content: space-between;
 }
@@ -122,12 +142,24 @@
     flex-grow: 1;
     text-align: left;
     padding-left: 0.5em;
+    overflow-wrap: break-word;
+    word-break: break-all;
+    word-break: break-word;
+}
+
+.spell .note {
+    font-size: 80%;
 }
 
 .spell .view {
     flex-grow: 0;
-    padding: 0 0.5em;
     cursor: pointer;
+    background: #eee url("images/ui-bg_highlight-soft_100_eeeeee_1x100.png") 50% top repeat-x;
+}
+
+.spell .view img {
+    height: 1em;
+    width: auto;
 }
 
 .spell input {
@@ -136,10 +168,7 @@
 }
 
 .spell + .spell {
-    margin-top: 1px;
-}
-
-.spell .title {
+    margin-top: 1mm;
 }
 
 .spell.used {
@@ -212,4 +241,30 @@
 .slotTable th, .slotTable td {
     border: 1px solid black;
     padding: 0 0.5em;
+}
+
+@media only screen and (max-width: 480px) {
+
+    .book {
+        width: 40vw;
+        margin: 3vw;
+    }
+
+    .spell {
+        width: 34vw;
+        min-height: 3em;
+    }
+
+    .spell .view img {
+        margin-top: 0.75em;
+    }
+
+    .prepareCategory {
+        width: 80vw;
+    }
+
+    #preparedSpells.ui-accordion .ui-accordion-content {
+        padding: 1em 0;
+    }
+
 }
