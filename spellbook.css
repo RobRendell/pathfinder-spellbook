@@ -1,6 +1,12 @@
 
 body {
     background-color: #F1EDC2;
+    -webkit-touch-callout: none; /* iOS Safari */
+    -webkit-user-select: none;   /* Chrome/Safari/Opera */
+    -khtml-user-select: none;    /* Konqueror */
+    -moz-user-select: none;      /* Firefox */
+    -ms-user-select: none;       /* IE/Edge */
+    user-select: none;           /* non-prefixed version, currently not supported by any browser */
 }
 
 .panel {
@@ -87,11 +93,19 @@ body {
     display: block;
 }
 
-.ui-accordion h4, h3 {
+.ui-accordion h1,
+.ui-accordion h2,
+.ui-accordion h3,
+.ui-accordion h4,
+.ui-accordion h5 {
     overflow: hidden;
 }
 
-.ui-accordion div + h4, .ui-accordion div + h3 {
+.ui-accordion div + h1,
+.ui-accordion div + h2,
+.ui-accordion div + h3,
+.ui-accordion div + h4,
+.ui-accordion div + h5 {
     margin-top: 0.5cm !important;
 }
 
@@ -251,11 +265,16 @@ body {
     }
 
     .spell {
+        width: 100%;
+        max-width: 15em;
+    }
+
+    #prepareSpellsPanel .spell {
         width: 34vw;
         min-height: 3em;
     }
 
-    .spell .view img {
+    #prepareSpellsPanel .spell .view img {
         margin-top: 0.75em;
     }
 
@@ -263,7 +282,8 @@ body {
         width: 80vw;
     }
 
-    #preparedSpells.ui-accordion .ui-accordion-content {
+    #preparedSpells.ui-accordion .ui-accordion-content,
+    #spellListAccordion.ui-accordion .ui-accordion-content {
         padding: 1em 0;
     }
 

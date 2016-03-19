@@ -464,6 +464,8 @@ var TopMenu = Class.create({
         });
         $('body').on('tap', '.ui-widget-overlay', function (evt) {
             $('#spellPopup').dialog('close');
+            evt.preventDefault()
+            evt.stopPropagation();
         });
         this.setSelectedBook(this.globalSettings.get(BookKeys.keyCurrentBookID));
     },

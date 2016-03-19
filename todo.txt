@@ -12,6 +12,8 @@ Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their
 
 "back" navigation for hyperlinks between spell descriptions.
 
+Trap Android back key, make it work like tapping on the back link.
+
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
 
 In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
@@ -32,6 +34,8 @@ Fix checkbox list (spontaneous casters) outside of level's div, using next() ins
 
 Spell details dialog doesn't always appear in visible screen area (if scrolled down).
 
-Try to get the known spell checkbox into top-right corner of spell (overlap view icon space) for small screens.
+New spontaneous caster can't select known spells
 
-Spell "card" could be wide on adventuring tab (and spells known?) - only needs to be narrow/fat on preparing spells panel.
+Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
+
+Empty and checked boxes don't display on Android - need images/SVG
