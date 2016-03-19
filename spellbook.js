@@ -1143,6 +1143,8 @@ var BookMenu = Class.create({
                         return;
                     }
                     topDiv.append($('<h4 />').text('Level ' + level));
+                    var currentDiv = $('<div />').data('psb_category', value);
+                    var clickFn;
                     if (slotData.slotType == this.textSpontaneousSlots) {
                         var slotDiv = $('<div class="slotDiv" />');
                         if (slotData.slots[level] > 0) {
@@ -1151,22 +1153,16 @@ var BookMenu = Class.create({
                             slotDiv.text('At will');
                         }
                         topDiv.append(slotDiv);
-                    }
-                    var currentDiv = $('<div />').data('psb_category', value);
-                    topDiv.append(currentDiv);
-                    var clickFn;
-                    if (slotData.slotType == this.textSpontaneousSlots) {
-                        var checkboxElementId = `slot_${value.toId()}_${level}`;
                         clickFn = $.proxy(function (evt) {
-                            this.checkboxInteraction($('#' + checkboxElementId), (evt.type == 'tap') ? -1 : 1);
+                            this.checkboxInteraction(slotDiv, (evt.type == 'tap') ? -1 : 1);
                         }, this);
-                        currentDiv.addClass(checkboxElementId);
                         if (slotData.slots[level] > 0 && slotData.slotsToday[level] == 0) {
                             currentDiv.fadeTo(0, 0.3);
                         }
                     } else {
                         clickFn = $.proxy(this.castPreparedSpell, this);
                     }
+                    topDiv.append(currentDiv);
                     $.each(spellKeyList.sort(), $.proxy(function (index, spellKey) {
                         var isUsed = false;
                         if (spellKey.indexOf('!') == spellKey.length - 1) {
@@ -1195,7 +1191,6 @@ var BookMenu = Class.create({
     },
 
     createCheckboxControl: function (element, spellsPerDay, slotsToday, slotKey, heading) {
-        element.prop('id', `slot_${heading.toId()}_${slotKey}`);
         element.addClass('checkboxControl');
         element.data('psb_spellsPerDay', spellsPerDay);
         element.data('psb_slotsToday', slotsToday);

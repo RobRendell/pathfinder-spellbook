@@ -1,10 +1,8 @@
-Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
+Android is slow to load pages with lots of dynamic content - react to button press in some fashion?
 
 Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
 
 Trap Android back key, make it work like tapping on the back link.
-
-Android is slow to load pages with lots of dynamic content - react to button press in some fashion?
 
 Add schools, domains etc to adventuring tab
 
