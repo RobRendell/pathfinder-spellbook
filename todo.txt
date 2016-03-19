@@ -1,4 +1,4 @@
-Empty and checked boxes don't display on Android - need images/SVG
+"Mythic" section getting through on some spells: Dragon's Breath (4th), Blink (3rd), others
 
 Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
 
@@ -17,6 +17,8 @@ Close dialog button (when clicking on view icon for a spell and seeing full desc
 "Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
 
 Opposing Schools that take up two spell slots
+
+Initialisation of spell data post-load takes a significant amount of time on Android... need to do 2nd progress bar.
 
 For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
 

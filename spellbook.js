@@ -1207,7 +1207,7 @@ var BookMenu = Class.create({
 
     checkboxTouchHandler: function (evt) {
         var delta = (!evt) ? 0 : (evt.type === 'tap') ? -1 : 1;
-        this.checkboxInteraction($(evt.target), delta);
+        this.checkboxInteraction($(evt.currentTarget), delta);
     },
 
     checkboxInteraction: function (element, delta) {
@@ -1230,18 +1230,22 @@ var BookMenu = Class.create({
     },
 
     refreshCheckboxesNOfM: function (element, max, current) {
-        var checkboxes = '';
-        for (box = 0; box < max; ++box) {
-            if (box > 0) {
-                checkboxes += '&nbsp;';
-            }
-            if (box >= max - current) {
-                checkboxes += '&#9744;';
-            } else {
-                checkboxes += '&#9745;';
-            }
+        var checkboxeList = element.find('input[type="checkbox"]');
+        if (checkboxeList.length > max) {
+            element.html('');
         }
-        element.html(checkboxes);
+        for (box = 0; box < max; ++box) {
+            var checkbox;
+            if (box < checkboxeList.length) {
+                checkbox = checkboxeList.eq(box);
+            } else {
+                checkbox = $('<input type="checkbox" />').on('click touch', function (evt) {
+                    evt.preventDefault();
+                });
+                element.append(checkbox);
+            }
+            checkbox.prop('checked', (box < max - current));
+        }
     },
 
     castPreparedSpell: function (evt) {
