@@ -945,6 +945,9 @@ var BookMenu = Class.create({
         $.each(list, $.proxy(function (index, value) {
             value = prefix + value;
             var name = (prefix) ? value : this.spellData.classNames[value];
+            if (!this.knownSpells[value]) {
+                this.knownSpells[value] = {};
+            }
             var headingElt = $('<h3/>').text(name);
             accordion.append(headingElt);
             headingElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));

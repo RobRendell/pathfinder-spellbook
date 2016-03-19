@@ -1,5 +1,3 @@
-New spontaneous caster can't select known spells
-
 Empty and checked boxes don't display on Android - need images/SVG
 
 Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
