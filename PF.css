@@ -2,6 +2,13 @@
     display: none;
 }
 
+#spellPopup .subheading {
+    font-weight: bold;
+    font-variant: small-caps;
+    border-top: 1px solid black;
+    border-bottom: 1px solid black;
+}
+
 #spellPopup .alignleft {
 }
 
@@ -9,10 +16,7 @@
     display: none;
 }
 
-#spellPopup h1, #spellPopup h2, #spellPopup h3, #spellPopup h4, #spellPopup h5 {
+#spellPopup div {
     font-weight: normal;
     font-size: 12pt;
-    border-bottom: 1px solid black;
-    padding-bottom: 0.5em;
-    margin: 0;
 }

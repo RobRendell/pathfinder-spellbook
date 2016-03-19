@@ -1034,6 +1034,17 @@ var BookMenu = Class.create({
                 return whole;
             }
         }, this));
+        content = content.replace(/<(\/)?h[1-5]>/g, '<$1div>');
+        var hasHeadings = false;
+        content = content.replace(/<div><b>([A-Z]*)<\/b><\/div>/g, function (whole, subheading) {
+            hasHeadings = true;
+            return '<div class="subheading">' + subheading.toTitleCase() + '</div>';
+        });
+        if (!hasHeadings) {
+            content = content.replace(/(<div><b>Casting Time)/, '<div class="subheading">Casting</div>$1');
+            content = content.replace(/(<div><b>Range)/, '<div class="subheading">Effect</div>$1');
+            content = content.replace(/(<div><p>)/, '<div class="subheading">Description</div>$1');
+        }
         if (this.selectedSources.indexOf('Mythic Adventures') < 0) {
             var mythicMatch = /<h[1-5]><b>Mythic:/.exec(content);
             if (mythicMatch) {

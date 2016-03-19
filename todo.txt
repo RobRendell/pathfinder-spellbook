@@ -39,3 +39,5 @@ New spontaneous caster can't select known spells
 Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
 
 Empty and checked boxes don't display on Android - need images/SVG
+
+Android is slow to load pages with lots of dynamic content - react to button press in some fashion?
