@@ -1029,6 +1029,12 @@ var BookMenu = Class.create({
 
     displaySpellDetails: function (spell) {
         var content = spell.full_text;
+        if (this.selectedSources.indexOf('Mythic Adventures') < 0) {
+            var mythicMatch = /<h[1-5]><b>Mythic:/.exec(content);
+            if (mythicMatch) {
+                content = content.substr(0, mythicMatch.index);
+            }
+        }
         content = content.replace(/<i>([^<,.]*)([,.])?<\/i>/g, $.proxy(function (whole, spellName, after) {
             if (this.spellData.spellByName[spellName.toLowerCase()]) {
                 after = after || '';
@@ -1047,12 +1053,6 @@ var BookMenu = Class.create({
             content = content.replace(/(<div><b>Casting Time)/, '<div class="subheading">Casting</div>$1');
             content = content.replace(/(<div><b>Range)/, '<div class="subheading">Effect</div>$1');
             content = content.replace(/(<div><p>)/, '<div class="subheading">Description</div>$1');
-        }
-        if (this.selectedSources.indexOf('Mythic Adventures') < 0) {
-            var mythicMatch = /<h[1-5]><b>Mythic:/.exec(content);
-            if (mythicMatch) {
-                content = content.substr(0, mythicMatch.index);
-            }
         }
         $('#spellPopup').html(content).dialog('option', 'title', spell.name)
                 .dialog('option', 'position', { my: 'left top', at: 'left top', of: window })

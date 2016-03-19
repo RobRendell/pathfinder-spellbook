@@ -1,5 +1,3 @@
-"Mythic" section getting through on some spells: Dragon's Breath (4th), Blink (3rd), others
-
 Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
 
 Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
