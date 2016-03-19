@@ -1,3 +1,35 @@
+New spontaneous caster can't select known spells
+
+Empty and checked boxes don't display on Android - need images/SVG
+
+Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
+
+Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
+
+Trap Android back key, make it work like tapping on the back link.
+
+Android is slow to load pages with lots of dynamic content - react to button press in some fashion?
+
+Add schools, domains etc to adventuring tab
+
+Only slow patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
+
+Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
+
+"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
+
+Opposing Schools that take up two spell slots
+
+For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
+
+"back" navigation for hyperlinks between spell descriptions.
+
+In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
+
+Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
+
+Spell details dialog doesn't always appear in visible screen area (if scrolled down).
+
 Also download feats from pathfindercommunity.net too, to get Metamagic feats?
     https://docs.google.com/spreadsheet/pub?key=0AhwDI9kFz9SddEJPRDVsYVczNVc2TlF6VDNBYTZqbkE&output=csv
     regex: (uses|takes) (up )?a (spell )?slot
@@ -8,36 +40,7 @@ domains: actual 152 vs correct core/apg 124
 bloodlines: actual 42 vs correct core/apg 27
 patrons: actual 37 vs correct core/apg 24
 
-Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their spells known each day).
-
-"back" navigation for hyperlinks between spell descriptions.
-
-Trap Android back key, make it work like tapping on the back link.
-
-Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
-
-In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
-
-Opposing Schools that take up two spell slots
-
-Metamagic feats (or at least, the ability to memorize lower-level spells into a higher-level slot and note the level difference).
-
-For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
-
-"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
-
-Scroll to top on setCurrentView... $('.panel').scrollTop() didn't work
-
-Remove reliance on id in createCheckboxControl etc. - should have direct access to the div
-
 Fix checkbox list (spontaneous casters) outside of level's div, using next() instead of parent() in checkboxInteraction();
 
-Spell details dialog doesn't always appear in visible screen area (if scrolled down).
+Arcanist has prepared spontaneous slots (i.e. like Sorcerer who can change their spells known each day).
 
-New spontaneous caster can't select known spells
-
-Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
-
-Empty and checked boxes don't display on Android - need images/SVG
-
-Android is slow to load pages with lots of dynamic content - react to button press in some fashion?
