@@ -14,8 +14,6 @@ Close dialog button (when clicking on view icon for a spell and seeing full desc
 
 Opposing Schools that take up two spell slots
 
-Initialisation of spell data post-load takes a significant amount of time on Android... need to do 2nd progress bar.
-
 For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
 
 "back" navigation for hyperlinks between spell descriptions.

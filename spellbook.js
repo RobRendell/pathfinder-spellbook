@@ -213,7 +213,7 @@ var SpellData = Class.create({
         'sonic', 'water', 'linktext', 'id', 'material_costs', 'bloodline',
         'patron', 'mythic_text', 'augmented', 'mythic' ],
 
-    init: function (headings, rawData) {
+    init: function (headings, rawData, progressFn) {
         this.headings = headings;
         this.rawData = rawData;
         this.classNames = { 'wiz': 'Wizard', 'sor': 'Sorcerer'};
@@ -256,7 +256,7 @@ var SpellData = Class.create({
                 'Transformation', 'Trickery', 'Water', 'Wisdom' ]
         };
         this.spellByName = {};
-        this.buildResultMapsForSources([
+        this.buildResultMapsForSources(progressFn, [
             [ this.classesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
             [ this.domainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
             [ this.bloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
@@ -267,23 +267,23 @@ var SpellData = Class.create({
         this.bloodlines = this.valuesFromSourceMap(this.bloodlinesForSources).sort();
         this.patrons = this.valuesFromSourceMap(this.patronsForSources).sort();
         // Sanity check
-        var thisclassesForSources = {};
-        var thisdomainsForSources = {};
-        var thisbloodlinesForSources = {};
-        var thispatronsForSources = {};
-        this.spellByName = {};
-        this.buildResultMapsForSources([
-            [ thisclassesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
-            [ thisdomainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
-            [ thisbloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
-            [ thispatronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
-        ]);
-        var domains = this.valuesFromSourceMap(thisdomainsForSources).sort();
-        var bloodlines = this.valuesFromSourceMap(thisbloodlinesForSources).sort();
-        var patrons = this.valuesFromSourceMap(thispatronsForSources).sort();
-        console.log(`domains: actual ${domains.length} vs correct core/apg ${this.domains.length}`);
-        console.log(`bloodlines: actual ${bloodlines.length} vs correct core/apg ${this.bloodlines.length}`);
-        console.log(`patrons: actual ${patrons.length} vs correct core/apg ${this.patrons.length}`);
+//        var thisclassesForSources = {};
+//        var thisdomainsForSources = {};
+//        var thisbloodlinesForSources = {};
+//        var thispatronsForSources = {};
+//        this.spellByName = {};
+//        this.buildResultMapsForSources(progressFn, [
+//            [ thisclassesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
+//            [ thisdomainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
+//            [ thisbloodlinesForSources, $.proxy(this.getBloodlinesFromSpell, this) ],
+//            [ thispatronsForSources, $.proxy(this.getPatronsFromSpell, this) ]
+//        ]);
+//        var domains = this.valuesFromSourceMap(thisdomainsForSources).sort();
+//        var bloodlines = this.valuesFromSourceMap(thisbloodlinesForSources).sort();
+//        var patrons = this.valuesFromSourceMap(thispatronsForSources).sort();
+//        console.log(`domains: actual ${domains.length} vs correct core/apg ${this.domains.length}`);
+//        console.log(`bloodlines: actual ${bloodlines.length} vs correct core/apg ${this.bloodlines.length}`);
+//        console.log(`patrons: actual ${patrons.length} vs correct core/apg ${this.patrons.length}`);
     },
 
     getClassLevelsFromSpell: function (spell, map) {
@@ -344,7 +344,7 @@ var SpellData = Class.create({
         return map;
     },
 
-    buildResultMapsForSources: function (resultMapsAndFnList) {
+    buildResultMapsForSources: function (progressFn, resultMapsAndFnList) {
         $.each(this.rawData, $.proxy(function (index, spell) {
             this.spellByName[spell.name.toLowerCase()] = spell;
             $.each(resultMapsAndFnList, function (index, resultMapAndFn) {
@@ -357,6 +357,9 @@ var SpellData = Class.create({
                     resultFn(spell, resultMap[spell.source]);
                 }
             });
+            if (progressFn) {
+                progressFn(index);
+            }
         }, this));
         $.each(resultMapsAndFnList, function (index, resultMapAndFn) {
             var resultMap = resultMapAndFn[0];
@@ -1472,45 +1475,77 @@ $(document).ready(function () {
         xhr: function () {
             var xhr = new window.XMLHttpRequest();
             xhr.addEventListener('progress', function (evt) {
-                $('#progress').progressbar('value', evt.loaded);
+                $('#progress').progressbar('option', 'value', evt.loaded);
             });
             return xhr;
-        }
+        },
+        dataType: 'text'
     })
     .then(function (data) {
-        $('#progress').progressbar('value', globalSettings.getInt('dataSize'));
         globalSettings.set('dataSize', data.length);
-        $('#loading').fadeOut();
+        $('#loadingMessage').text('Parsing CSV...');
+        $('#progress').progressbar('option', 'value', 0);
+        var nextNewline = data.indexOf('\r') + 2;
+        var headingRow = data.substring(0, nextNewline);
+        var chunkLen = parseInt(data.length / 100);
+        var chunks = [];
+        for (var pos = nextNewline; pos < data.length; ) {
+            nextNewline = data.indexOf('\r', pos + chunkLen) + 2;
+            if (nextNewline > 1) {
+                chunks.push(data.substring(pos, nextNewline));
+                pos = nextNewline;
+            } else {
+                chunks.push(data.substring(pos));
+                pos = data.length;
+            }
+        }
+        $('#progress').progressbar('option', 'max', chunks.length);
         return $.Deferred(function (defer) {
-            $.csv.toObjects(data, {}, function (err, objects) {
-                if (err) {
-                    defer.reject(err);
+            var chunkIndex = -1;
+            var progress = 0;
+            var headings;
+            var spellList = [];
+            var loop = function () {
+                if (chunkIndex == -1) {
+                    $.csv.toArray(headingRow, {}, function (err, arr) {
+                        if (err) {
+                            defer.reject(err);
+                        } else {
+                            headings = arr;
+                            window.setTimeout(loop, 0);
+                        }
+                    });
                 } else {
-                    defer.resolve(data, objects);
+                    var chunk = headingRow + chunks[chunkIndex];
+                    $.csv.toObjects(chunk, {}, function (err, objects) {
+                        if (err) {
+                            defer.reject(err);
+                        } else {
+                            spellList = spellList.concat(objects);
+                            if (chunkIndex >= chunks.length) {
+                                defer.resolve(headings, spellList);
+                            } else {
+                                window.setTimeout(loop, 0);
+                            }
+                        }
+                    });
                 }
-            });
-        });
-    })
-    .then(function (data, spellList) {
-        return $.Deferred(function (defer) {
-            var headingRow = data.substring(0, data.search(/[\r\n]/));
-            $.csv.toArray(headingRow, {}, function (err, headings) {
-                if (err) {
-                    defer.reject(err);
-                } else {
-                    defer.resolve(headings, spellList);
-                }
-            });
+                $('#progress').progressbar('option', 'value', ++chunkIndex);
+            }
+            loop();
         });
     })
     .then(function (headings, spellList) {
-        var spellData = new SpellData(headings, spellList);
-        // TODO show current book (and book panel) as saved in globalSettings
+        $('#loadingMessage').text('Processing spell data...');
+        $('#progress').progressbar('option', 'max', spellList.length);
+        $('#progress').progressbar('option', 'value', 0);
+        var spellData = new SpellData(headings, spellList, function (index) {
+            $('#progress').progressbar('option', 'value', index);
+        });
         new TopMenu(globalSettings, spellData);
     })
     .fail(function (err) {
         $('#loading').text('Error: ' + err);
-        $('#loading').fadeIn();
     });
     /*
     $('.panel').hide();
