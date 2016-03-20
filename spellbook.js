@@ -226,35 +226,40 @@ var SpellData = Class.create({
         }, this));
         this.classHeadings = Object.keys(this.classNames).sort()
         // Lots of later books add Core and APG spells to their new classes, bloodlines and domains.
-        this.classesForSources = {
-            'PFRPG Core': [ 'adept', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sor', 'wiz' ],
-            'APG': [ 'alchemist', 'inquisitor', 'oracle', 'summoner', 'witch' ]
-        };
-        this.bloodlinesForSources = {
-            'PFRPG Core': [ 'Aberrant', 'Abyssal', 'Arcane', 'Celestial', 'Destined', 'Draconic', 'Elemental', 'Fey',
-                'Infernal', 'Undead' ],
-            'APG': [ 'Aquatic', 'Boreal', 'Deepearth', 'Dreamspun', 'Protean', 'Serpentine', 'Shadow', 'Starsoul',
-                'Stormborn', 'Verdant' ]
-        };
-        this.domainsForSources = {
-            'PFRPG Core': [ 'Air', 'Animal', 'Artifice', 'Chaos', 'Charm', 'Community', 'Darkness', 'Death',
-                'Destruction', 'Earth', 'Evil', 'Fire', 'Glory', 'Good', 'Healing', 'Knowledge', 'Law', 'Liberation',
-                'Luck', 'Madness', 'Magic', 'Nobility', 'Plant', 'Protection', 'Repose', 'Rune', 'Strength', 'Sun',
-                'Travel', 'Trickery', 'War', 'Water', 'Weather' ],
-            'APG': [ 'Agathion', 'Ancestors', 'Arcane', 'Archon', 'Ash', 'Azata', 'Blood', 'Catastrophe', 'Caves',
-                'Cloud', 'Construct', 'Curse', 'Daemon', 'Day', 'Decay', 'Deception', 'Defense', 'Demon', 'Devil',
-                'Divine', 'Exploration', 'Family', 'Fate', 'Feather', 'Ferocity', 'Freedom', 'Fur', 'Growth',
-                'Heroism', 'Home', 'Honor', 'Ice', 'Inevitable', 'Insanity', 'Language', 'Leadership', 'Light',
-                'Loss', 'Love', 'Lust', 'Martyr', 'Memory', 'Metal', 'Murder', 'Night', 'Nightmare', 'Oceans',
-                'Protean', 'Purity', 'Rage', 'Resolve', 'Restoration', 'Resurrection', 'Revolution', 'Seasons',
-                'Smoke', 'Souls', 'Storms', 'Tactics', 'Thievery', 'Thought', 'Toil', 'Trade', 'Undead', 'Wards',
-                'Wind' ]
-        };
-        this.patronsForSources = {
-            'PFRPG Core': [],
-            'APG': [ 'Agility', 'Animals', 'Deception', 'Elements', 'Endurance', 'Plague', 'Shadow', 'Strength',
-                'Transformation', 'Trickery', 'Water', 'Wisdom' ]
-        };
+//        this.classesForSources = {
+//            'PFRPG Core': [ 'adept', 'bard', 'cleric', 'druid', 'paladin', 'ranger', 'sor', 'wiz' ],
+//            'APG': [ 'alchemist', 'inquisitor', 'oracle', 'summoner', 'witch' ]
+//        };
+//        this.bloodlinesForSources = {
+//            'PFRPG Core': [ 'Aberrant', 'Abyssal', 'Arcane', 'Celestial', 'Destined', 'Draconic', 'Elemental', 'Fey',
+//                'Infernal', 'Undead' ],
+//            'APG': [ 'Aquatic', 'Boreal', 'Deepearth', 'Dreamspun', 'Protean', 'Serpentine', 'Shadow', 'Starsoul',
+//                'Stormborn', 'Verdant' ]
+//        };
+//        this.domainsForSources = {
+//            'PFRPG Core': [ 'Air', 'Animal', 'Artifice', 'Chaos', 'Charm', 'Community', 'Darkness', 'Death',
+//                'Destruction', 'Earth', 'Evil', 'Fire', 'Glory', 'Good', 'Healing', 'Knowledge', 'Law', 'Liberation',
+//                'Luck', 'Madness', 'Magic', 'Nobility', 'Plant', 'Protection', 'Repose', 'Rune', 'Strength', 'Sun',
+//                'Travel', 'Trickery', 'War', 'Water', 'Weather' ],
+//            'APG': [ 'Agathion', 'Ancestors', 'Arcane', 'Archon', 'Ash', 'Azata', 'Blood', 'Catastrophe', 'Caves',
+//                'Cloud', 'Construct', 'Curse', 'Daemon', 'Day', 'Decay', 'Deception', 'Defense', 'Demon', 'Devil',
+//                'Divine', 'Exploration', 'Family', 'Fate', 'Feather', 'Ferocity', 'Freedom', 'Fur', 'Growth',
+//                'Heroism', 'Home', 'Honor', 'Ice', 'Inevitable', 'Insanity', 'Language', 'Leadership', 'Light',
+//                'Loss', 'Love', 'Lust', 'Martyr', 'Memory', 'Metal', 'Murder', 'Night', 'Nightmare', 'Oceans',
+//                'Protean', 'Purity', 'Rage', 'Resolve', 'Restoration', 'Resurrection', 'Revolution', 'Seasons',
+//                'Smoke', 'Souls', 'Storms', 'Tactics', 'Thievery', 'Thought', 'Toil', 'Trade', 'Undead', 'Wards',
+//                'Wind' ]
+//        };
+//        this.patronsForSources = {
+//            'PFRPG Core': [],
+//            'APG': [ 'Agility', 'Animals', 'Deception', 'Elements', 'Endurance', 'Plague', 'Shadow', 'Strength',
+//                'Transformation', 'Trickery', 'Water', 'Wisdom' ]
+//        };
+        // TODO
+        this.classesForSources = {};
+        this.domainsForSources = {};
+        this.bloodlinesForSources = {};
+        this.patronsForSources = {};
         this.spellByName = {};
         this.buildResultMapsForSources(progressFn, [
             [ this.classesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
@@ -288,7 +293,7 @@ var SpellData = Class.create({
 
     getClassLevelsFromSpell: function (spell, map) {
         if (!map) {
-            map = {}
+            map = {};
         }
         $.each(this.classHeadings, function (index, classHeading) {
             if (spell[classHeading] === 'NULL' || spell[classHeading] === undefined) {
@@ -592,10 +597,11 @@ var BookMenu = Class.create({
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
         $('.back').on('tap', $.proxy(this.back, this));
-        $('#detailsButton').on('tap', $.proxy(this.showDetailsPanel, this));
-        $('#perDayButton').on('tap', $.proxy(this.showPerDayPanel, this));
-        $('#knownButton').on('tap', $.proxy(this.showKnownPanel, this));
-        $('#adventuringButton').on('tap', $.proxy(this.showAdventuringPanel, this));
+        var setCurrentView = $.proxy(this.setCurrentView, this);
+        $('#detailsButton').on('tap', function () { setCurrentView('detailsPanel'); });
+        $('#perDayButton').on('tap', function () { setCurrentView('spellsPerDayPanel'); });
+        $('#knownButton').on('tap', function () { setCurrentView('spellsKnownPanel'); });
+        $('#adventuringButton').on('tap', function () { setCurrentView('adventuringPanel'); });
         this.currentView = 'menu';
         // Details panel setup
         $('#detailsAccordion').accordion({
@@ -636,7 +642,7 @@ var BookMenu = Class.create({
         $('#spellsPerDayPanelApply').on('tap', $.proxy(this.onSpellsPerDayPanelApply, this));
         $('#spellsKnownPanelApply').on('tap', $.proxy(this.onSpellsKnownPanelApply, this));
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
-        $('#adventuringChangeSpellsButton').on('tap', $.proxy(this.onAdventuringChangeSpellsButton, this));
+        $('#adventuringChangeSpellsButton').on('tap', function () { setCurrentView('prepareSpellsPanel'); });
         $('#prepareSpellsApplyButton').on('tap', $.proxy(this.onPrepareSpellsApplyButton, this));
         // Show current panel
         this.setCurrentView(this.globalSettings.get(BookKeys.keyCurrentPanel, 'menu'));
@@ -831,10 +837,19 @@ var BookMenu = Class.create({
         }
     },
 
+    showLoading: function (element, endFn) {
+        element.html('');
+        var spinner = $('<img class="spinner" src="loading.gif" />');
+        element.after(spinner);
+        window.setTimeout(function () {
+            endFn();
+            spinner.remove();
+        }, 500);
+    },
+
     showPerDayPanel: function () {
         this.setCurrentView('spellsPerDayPanel');
-        $('#spellsPerDayItems').html('');
-        this.addClassSpellsPerDay();
+        this.showLoading($('#spellsPerDayItems'), $.proxy(this.addClassSpellsPerDay, this));
     },
 
     textPreparedSlots: 'Prepared spell slots',
@@ -932,7 +947,10 @@ var BookMenu = Class.create({
     showKnownPanel: function () {
         this.setCurrentView('spellsKnownPanel');
         $('#spellsKnownPanel .ui-accordion').accordion('destroy');
-        $('#spellListAccordion').html('');
+        this.showLoading($('#spellListAccordion'), $.proxy(this.populateKnownPanel, this));
+    },
+
+    populateKnownPanel: function () {
         this.listSpellCategory(this.selectedClasses, '');
         this.listSpellCategory(this.selectedBloodlines, 'Bloodline: ');
         this.listSpellCategory(this.selectedDomains, 'Domain: ');
@@ -1110,9 +1128,12 @@ var BookMenu = Class.create({
     showAdventuringPanel: function () {
         this.setCurrentView('adventuringPanel');
         $('#adventuringSpells').off('.adventureControl');
-        $('#adventuringSpells').html('');
         $('#adventuringRestButton').hide();
         $('#adventuringChangeSpellsButton').hide();
+        this.showLoading($('#adventuringSpells'), $.proxy(this.populateAdventuringPanel, this));
+    },
+
+    populateAdventuringPanel: function () {
         this.addAdventuringCategory(this.selectedClasses, '', this.classSlots);
         this.addAdventuringCategory(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots);
         this.addAdventuringCategory(this.selectedDomains, 'Domain: ', this.domainSlots);
@@ -1311,16 +1332,15 @@ var BookMenu = Class.create({
         }, this));
     },
 
-    onAdventuringChangeSpellsButton: function () {
-        this.setCurrentView('prepareSpellsPanel');
-    },
-
     showPrepareSpellsPanel: function () {
         this.copyPreparedSpells = $.extend(true, {}, this.preparedSpells);
         $('#preparedSpells .ui-accordion').accordion('destroy');
         $('#preparedSpells .ui-draggable').draggable('destroy');
         $('#preparedSpells .ui-droppable').droppable('destroy');
-        $('#preparedSpells').html('');
+        this.showLoading($('#preparedSpells'), $.proxy(this.populatePrepareSpellsPanel, this));
+    },
+
+    populatePrepareSpellsPanel: function () {
         this.createPrepareSpellSection(this.selectedClasses, '', this.classSlots);
         this.createPrepareSpellSection(this.selectedBloodlines, 'Bloodline: ', this.bloodlineSlots);
         this.createPrepareSpellSection(this.selectedDomains, 'Domain: ', this.domainSlots);
