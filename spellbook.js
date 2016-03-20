@@ -475,6 +475,17 @@ var TopMenu = Class.create({
             evt.preventDefault()
             evt.stopPropagation();
         });
+        $(document).on('keydown', $.proxy(function (evt) {
+            if (evt.keyCode == 27 && this.selectedBook) {
+                evt.preventDefault();
+                this.selectedBook.back();
+            }
+        }, this));
+        $(window).on('hashchange', $.proxy(function () {
+            if (this.selectedBook) {
+                this.selectedBook.setCurrentView(window.location.hash.substr(1));
+            }
+        }, this));
         this.setSelectedBook(this.globalSettings.get(BookKeys.keyCurrentBookID));
     },
 
@@ -531,6 +542,8 @@ var TopMenu = Class.create({
         } else {
             this.globalSettings.clear(BookKeys.keyCurrentBookID);
             this.globalSettings.clear(BookKeys.keyCurrentPanel);
+            this.selectedBook = null;
+            $('.panel').fadeOut();
             this.refresh();
         }
     },
@@ -602,7 +615,7 @@ var BookMenu = Class.create({
         $('#perDayButton').on('tap', function () { setCurrentView('spellsPerDayPanel'); });
         $('#knownButton').on('tap', function () { setCurrentView('spellsKnownPanel'); });
         $('#adventuringButton').on('tap', function () { setCurrentView('adventuringPanel'); });
-        this.currentView = 'menu';
+        this.currentView = '';
         // Details panel setup
         $('#detailsAccordion').accordion({
             collapsible: true,
@@ -649,11 +662,16 @@ var BookMenu = Class.create({
     },
 
     setCurrentView: function (view) {
-        if (view == 'menu' || view != this.currentView) {
+        if (view != this.currentView) {
             $('.panel').fadeOut();
+            window.location.hash = view;
             this.currentView = view;
             this.globalSettings.set(BookKeys.keyCurrentPanel, view);
-            if (view == 'menu') {
+            if (view == '') {
+                $('.ui-accordion').accordion('destroy');
+                $('#book *').off();
+                this.topMenu.setSelectedBook(null);
+            } else if (view == 'menu') {
                 $('#bookMenu').fadeIn();
             } else if (view == 'detailsPanel') {
                 $('#detailsPanel').fadeIn();
@@ -677,15 +695,17 @@ var BookMenu = Class.create({
     },
 
     back: function () {
-        $('.panel').fadeOut();
-        if (this.currentView == 'menu') {
-            $('.ui-accordion').accordion('destroy');
-            $('#book *').off();
-            this.topMenu.setSelectedBook(null);
-        } else if (this.currentView == 'prepareSpellsPanel') {
-            this.setCurrentView('adventuringPanel');
+        if ($('#spellPopup').dialog('isOpen')) {
+            $('#spellPopup').dialog('close');
         } else {
-            this.setCurrentView('menu');
+            $('.panel').fadeOut();
+            if (this.currentView == 'menu') {
+                this.setCurrentView('');
+            } else if (this.currentView == 'prepareSpellsPanel') {
+                this.setCurrentView('adventuringPanel');
+            } else {
+                this.setCurrentView('menu');
+            }
         }
     },
 
