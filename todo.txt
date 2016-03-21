@@ -1,6 +1,6 @@
-Add schools, domains etc to adventuring tab
+For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
 
-Only slow patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
+Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
 
 Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
 
@@ -8,7 +8,7 @@ Close dialog button (when clicking on view icon for a spell and seeing full desc
 
 Opposing Schools that take up two spell slots
 
-For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
+Change spellData.spellByName to spellById, use name.toId() instead of toLowerCase()?
 
 Embrace hash navigation fully, use it to select current book, instead of manual back() method to go back, rebuild in full on load.
 
@@ -18,7 +18,11 @@ In Known Spells panel, show a running # of spells known at each level (for spont
 
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
 
+Ultimate Magic alternate specialty schools? http://paizo.com/pathfinderRPG/prd/ultimateMagic/spellcastingClassOptions/wizard.html
+
 Spell details dialog doesn't always appear in visible screen area (if scrolled down).
+
+maxLevel for classes etc. derived from data rather than hard-coded
 
 Also download feats from pathfindercommunity.net too, to get Metamagic feats?
     https://docs.google.com/spreadsheet/pub?key=0AhwDI9kFz9SddEJPRDVsYVczNVc2TlF6VDNBYTZqbkE&output=csv

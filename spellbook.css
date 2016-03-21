@@ -241,6 +241,10 @@ body {
     padding: 0.5em;
 }
 
+.negativeSlots {
+    color: red;
+}
+
 .droppableHighlight {
     border: 1px solid cyan !important;
 }
