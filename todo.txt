@@ -1,12 +1,18 @@
-For "not spell slots" options, nominate which other list of slots it is added to (e.g. bloodline added to sorcerer list, patron added to witch list etc)
+Save/load named prepared spell loadouts for a given class.
+
+Bloodlines and Patron spells.
+
+Style favoured school/opposing school/domain spell (border)
+
+Think about ways to improve the preparation interface... perhaps have the known spells on the LHS in an accordion, and the prepared slots on the RHS scrolling independently?
+
+Selecting prepared spells loses its accordion?
 
 Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
 
 Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
 
-"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
-
-Opposing Schools that take up two spell slots
+"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.  Set all/clear all in details panel too?
 
 Change spellData.spellByName to spellById, use name.toId() instead of toLowerCase()?
 

@@ -15,6 +15,16 @@ Number.prototype.ordinal = function () {
     return this + (suffix[(value-20)%10] || suffix[value] || suffix[0]);
 }
 
+Array.prototype.uniq = function () {
+    var result = [];
+    for (var index = 0; index < this.length; ++index) {
+        if (index == 0 || this[index] !== this[index - 1]) {
+            result.push(this[index]);
+        }
+    }
+    return result;
+}
+
 $.fn.presence = function () {
     return this.length !== 0 && this;
 }
@@ -434,6 +444,7 @@ var BookKeys = {
     keySelectedDomains: 'selectedDomains',
     keySelectedPatrons: 'selectedPatrons',
     keySelectedSchools: 'selectedSchools',
+    keyCategoryAssociations: 'categoryAssociations',
     keyClassSlots: 'classSlots',
     keyKnownSpells: 'knownSpells',
     keyPreparedSpells: 'preparedSpells'
@@ -602,6 +613,7 @@ var BookMenu = Class.create({
         this.selectedBloodlines = this.storage.get(BookKeys.keySelectedBloodlines, []);
         this.selectedPatrons = this.storage.get(BookKeys.keySelectedPatrons, []);
         this.selectedSchools = this.storage.get(BookKeys.keySelectedSchools, {});
+        this.categoryAssociations = this.storage.get(BookKeys.keyCategoryAssociations, {});
         this.classSlots = this.storage.get(BookKeys.keyClassSlots, {});
         this.knownSpells = this.storage.get(BookKeys.keyKnownSpells, {});
         this.preparedSpells = this.storage.get(BookKeys.keyPreparedSpells, {});
@@ -611,7 +623,7 @@ var BookMenu = Class.create({
         $('.back').on('tap', $.proxy(this.back, this));
         var setCurrentView = $.proxy(this.setCurrentView, this);
         $('#detailsButton').on('tap', function () { setCurrentView('detailsPanel'); });
-        $('#perDayButton').on('tap', function () { setCurrentView('spellsPerDayPanel'); });
+        $('#spellSlotsButton').on('tap', function () { setCurrentView('spellSlotsPanel'); });
         $('#knownButton').on('tap', function () { setCurrentView('spellsKnownPanel'); });
         $('#adventuringButton').on('tap', function () { setCurrentView('adventuringPanel'); });
         this.currentView = '';
@@ -655,7 +667,7 @@ var BookMenu = Class.create({
         }, this));
         $('#detailsPanelApply').on('tap', $.proxy(this.onDetailsPanelApply, this));
         $('#detailsPanelDelete').on('tap', $.proxy(this.onDetailsPanelDelete, this));
-        $('#spellsPerDayPanelApply').on('tap', $.proxy(this.onSpellsPerDayPanelApply, this));
+        $('#spellSlotsPanelApply').on('tap', $.proxy(this.onSpellSlotsPanelApply, this));
         $('#spellsKnownPanelApply').on('tap', $.proxy(this.onSpellsKnownPanelApply, this));
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
         $('#adventuringChangeSpellsButton').on('tap', function () { setCurrentView('prepareSpellsPanel'); });
@@ -679,9 +691,9 @@ var BookMenu = Class.create({
             } else if (view == 'detailsPanel') {
                 $('#detailsPanel').fadeIn();
                 this.showDetailsPanel();
-            } else if (view == 'spellsPerDayPanel') {
-                $('#spellsPerDayPanel').fadeIn();
-                this.showPerDayPanel();
+            } else if (view == 'spellSlotsPanel') {
+                $('#spellSlotsPanel').fadeIn();
+                this.showSpellSlotsPanel();
             } else if (view == 'spellsKnownPanel') {
                 $('#spellsKnownPanel').fadeIn();
                 this.showKnownPanel();
@@ -915,15 +927,44 @@ var BookMenu = Class.create({
         }, 500);
     },
 
-    showPerDayPanel: function () {
-        this.showLoading($('#spellsPerDayItems'), $.proxy(this.addClassSpellsPerDay, this));
+    showSpellSlotsPanel: function () {
+        this.showLoading($('#spellSlotsItems'), $.proxy(this.populateSpellSlotsPanel, this));
     },
 
     textPreparedSlots: 'Prepared spell slots',
     textSpontaneousSlots: 'Spontaneous spell slots',
 
-    addClassSpellsPerDay: function () {
-        this.appendCategory(this.selectedClasses, '', this.classSlots, $.proxy(this.defaultSlotForClass, this));
+    populateSpellSlotsPanel: function () {
+        this.appendClassSlots();
+        if (this.selectedClasses.length > 1) {
+            this.appendClassAssociation('Bloodline', this.selectedBloodlines);
+            this.appendClassAssociation('Domain', this.selectedDomains);
+            this.appendClassAssociation('Patron', this.selectedPatrons);
+            this.appendClassAssociation('School', this.selectedSchools);
+        }
+    },
+
+    appendClassAssociation: function (heading, list) {
+        var assocation = this.categoryAssociations[heading] || {};
+        $.each(list, $.proxy(function (index, category) {
+            var text = heading + ' ';
+            if ($.isArray(category)) {
+                category = category[1];
+            } else if (isNaN(index)) {
+                text = category.toTitleCase() + ' ' + text;
+                category = index;
+            }
+            var div = $('<div/>').addClass('spellSlotsHeading');
+            div.append($('<b/>').text(text + category + ' associated with '));
+            var select = $('<select/>').prop('name', heading + '_' + category.toId());
+            $.each(this.selectedClasses, $.proxy(function (index, classHeading) {
+                var className = this.spellData.classNames[classHeading];
+                select.append($('<option/>', {value: classHeading}).text(className));
+            }, this));
+            div.append(select);
+            select.val(assocation[category] || this.selectedClasses[0]);
+            $('#spellSlotsItems').append(div);
+        }, this));
     },
 
     defaultSlotForClass: function (classHeading) {
@@ -937,25 +978,21 @@ var BookMenu = Class.create({
         }
     },
 
-    appendCategory: function (list, prefix, previousValues, defaultValue) {
-        $.each(list, $.proxy(function (index, value) {
+    appendClassSlots: function (previousValues, defaultValue) {
+        $.each(this.selectedClasses, $.proxy(function (index, value) {
             var maxLevel = 9; // TODO
-            if ($.isFunction(defaultValue)) {
-                this.appendSpellsPerDay(prefix, value, maxLevel, previousValues, defaultValue(value));
-            } else {
-                this.appendSpellsPerDay(prefix, value, maxLevel, previousValues, defaultValue);
-            }
+            this.appendSpellSlots('', value, maxLevel, this.classSlots, this.defaultSlotForClass(value));
         }, this));
     },
 
-    appendSpellsPerDay: function (prefix, value, maxLevel, previousValues, defaultValue) {
+    appendSpellSlots: function (prefix, value, maxLevel, previousValues, defaultValue) {
         value = prefix + value;
         var name = (prefix) ? value : this.spellData.classNames[value];
         var slotData = previousValues[value] || { 'slots': [] };
-        var topDiv = $('<div/>').addClass('spellsPerDay');
-        var title = $('<div/>');
+        var topDiv = $('<div/>').addClass('spellSlots');
+        var title = $('<div/>').addClass('spellSlotsHeading');
         title.append($('<b/>').text(name + ' spells per day'));
-        var control = $(`<select class="spellsPerDaySlotType" id="${value.toId()}_slotType" />`);
+        var control = $(`<select id="${value.toId()}_slotType" />`);
         control.append($('<option/>').text(this.textPreparedSlots));
         control.append($('<option/>').text(this.textSpontaneousSlots));
         title.append(control);
@@ -972,17 +1009,23 @@ var BookMenu = Class.create({
             slotsDiv.append(slot);
         }
         topDiv.append(slotsDiv);
-        $('#spellsPerDayItems').append(topDiv);
+        $('#spellSlotsItems').append(topDiv);
         control.trigger('change');
     },
 
-    onSpellsPerDayPanelApply: function () {
-        this.classSlots = this.buildSpellsPerDay();
+    onSpellSlotsPanelApply: function () {
+        this.classSlots = this.buildSpellSlots();
         this.storage.set(BookKeys.keyClassSlots, this.classSlots);
+        this.categoryAssociations = {};
+        this.saveAssocations('Bloodline', this.selectedBloodlines);
+        this.saveAssocations('Domain', this.selectedDomains);
+        this.saveAssocations('Patron', this.selectedPatrons);
+        this.saveAssocations('School', this.selectedSchools);
+        this.storage.set(BookKeys.keyCategoryAssociations, this.categoryAssociations);
         this.back();
     },
 
-    buildSpellsPerDay: function (list) {
+    buildSpellSlots: function (list) {
         var result = {};
         $.each(this.selectedClasses, $.proxy(function (index, value) {
             var maxLevel = 9; // TODO
@@ -994,6 +1037,26 @@ var BookMenu = Class.create({
             result[value] = { 'slotType': slotType, 'slots': slots };
         }, this));
         return result;
+    },
+
+    saveAssocations: function (heading, list) {
+        $.each(list, $.proxy(function (index, category) {
+            if (!this.categoryAssociations[heading]) {
+                this.categoryAssociations[heading] = {};
+            }
+            if ($.isArray(category)) {
+                category = category[1];
+            } else if (isNaN(index)) {
+                category = index;
+            }
+            var value;
+            if (this.selectedClasses.length == 1) {
+                value = this.selectedClasses[0];
+            } else {
+                value = $(`select[name="${heading}_${category.toId()}"]`).val();
+            }
+            this.categoryAssociations[heading][category] = value;
+        }, this));
     },
 
     showKnownPanel: function () {
@@ -1411,7 +1474,9 @@ var BookMenu = Class.create({
     },
 
     showPrepareSpellsPanel: function () {
-        this.copyPreparedSpells = $.extend(true, {}, this.preparedSpells);
+        this.copy = {
+            preparedSpells: $.extend(true, {}, this.preparedSpells)
+        };
         $('#preparedSpells .ui-accordion').accordion('destroy');
         $('#preparedSpells .ui-draggable').draggable('destroy');
         $('#preparedSpells .ui-droppable').droppable('destroy');
@@ -1438,8 +1503,8 @@ var BookMenu = Class.create({
                 if (!this.knownSpells[value]) {
                     this.knownSpells[value] = {};
                 }
-                if (!this.copyPreparedSpells[value]) {
-                    this.copyPreparedSpells[value] = {};
+                if (!this.copy.preparedSpells[value]) {
+                    this.copy.preparedSpells[value] = {};
                 }
                 var knownDiv, preparedDiv;
                 var acceptSelector = 'noSuchThing';
@@ -1451,19 +1516,17 @@ var BookMenu = Class.create({
                     if (!this.knownSpells[value][level]) {
                         this.knownSpells[value][level] = [];
                     }
-                    if (!this.copyPreparedSpells[value][level]) {
-                        this.copyPreparedSpells[value][level] = [];
+                    if (!this.copy.preparedSpells[value][level]) {
+                        this.copy.preparedSpells[value][level] = [];
                     }
                     var knownSpells = this.knownSpells[value][level];
-                    if (value == 'cleric' || value == 'druid' || value == 'inquisitor') {
-                        // TODO what about multiclass cleric/druids/inquisitors with different domains?
-                        for (var index = 0; index < this.selectedDomains.length; ++index) {
-                            var domain;
-                            if ($.isArray(this.selectedDomains[index])) {
-                                domain = 'Domain: ' + this.selectedDomains[index][1];
-                            } else {
-                                domain = 'Domain: ' + this.selectedDomains[index];
-                            }
+                    for (var index = 0; index < this.selectedDomains.length; ++index) {
+                        var domain = this.selectedDomains[index];
+                        if ($.isArray(domain)) {
+                            domain = domain[1];
+                        }
+                        if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == value) {
+                            domain = 'Domain: ' + domain;
                             if (!this.knownSpells[domain]) {
                                 this.knownSpells[domain] = {};
                             }
@@ -1479,7 +1542,6 @@ var BookMenu = Class.create({
                     acceptSelector += ',.knownSpells' + level;
                     preparedDiv = $('<div />').text('Prepared spells')
                             .prop('id', `preparedDiv_${value.toId()}_${level}`)
-                            .data('psb_accept_backup', acceptSelector)
                             .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' });
                     currentDiv.append($('<h4 />').text(level.ordinal() + ' level - ' + slotData.slots[level] + ' slots'));
                     currentDiv.append($('<div />').append(knownDiv).append(preparedDiv));
@@ -1488,7 +1550,7 @@ var BookMenu = Class.create({
                     preparedDiv.data('psb_level', level);
                     knownDiv.on('drop', $.proxy(this.dropSpell, this));
                     preparedDiv.on('drop', $.proxy(this.dropSpell, this));
-                    $.each(knownSpells.sort(), $.proxy(function (index, spellKey) {
+                    $.each(knownSpells.sort().uniq(), $.proxy(function (index, spellKey) {
                         var spell = this.spellData.spellByName[spellKey];
                         this.appendSpellLine(knownDiv, spell).addClass('knownSpells' + level)
                         .draggable({
@@ -1497,7 +1559,7 @@ var BookMenu = Class.create({
                             'revert': 'invalid'
                         });
                     }, this));
-                    $.each(this.copyPreparedSpells[value][level].sort(), $.proxy(function (index, spellKey) {
+                    $.each(this.copy.preparedSpells[value][level].sort(), $.proxy(function (index, spellKey) {
                         if (spellKey.indexOf('!') == spellKey.length - 1) {
                             spellKey = spellKey.substr(0, spellKey.length - 1);
                         }
@@ -1521,64 +1583,67 @@ var BookMenu = Class.create({
         this.updatePreparedDivText(level, category);
     },
 
-    calculatePreparedSlotsLeft: function (level, category) {
-        var slots = this.classSlots[category].slots[level];
-        var prepared = this.copyPreparedSpells[category][level];
-        var haveBonusSlot = true;
-        if (category == 'wiz') {
-            // favoured and opposing schools
-            $.each(prepared, $.proxy(function (index, spellName) {
-                var spell = this.spellData.spellByName[spellName.toLowerCase()];
-                var school = spell.school.toTitleCase();
+    calculatePreparedSlotsLeft: function (classHeading, level) {
+        var slots = this.classSlots[classHeading].slots[level];
+        var favouredSchool = Object.keys(this.selectedSchools).find($.proxy(function (school) {
+             return (this.categoryAssociations.School && this.categoryAssociations.School[school] == classHeading &&
+                this.selectedSchools[school] == 'favoured');
+        }, this));
+        var hasSchoolSlot = level > 0 && favouredSchool;
+        var hasDomainSlot = level > 0 && this.selectedDomains.findIndex($.proxy(function (domain) {
+            if ($.isArray(domain)) {
+                domain = domain[1];
+            }
+            return (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading);
+        }, this)) >= 0;
+        var prepared = this.copy.preparedSpells[classHeading][level];
+        $.each(prepared, $.proxy(function (index, spellName) {
+            var spell = this.spellData.spellByName[spellName.toLowerCase()];
+            var school = spell.school.toTitleCase();
+            if (this.categoryAssociations.School && this.categoryAssociations.School[school] == classHeading) {
                 var affinity = this.selectedSchools[school];
-                if (affinity == 'favoured' && level > 0 && haveBonusSlot) {
-                    haveBonusSlot = false;
+                if (affinity == 'favoured' && level > 0 && hasSchoolSlot) {
+                    hasSchoolSlot = false;
+                    return;
                 } else if (affinity == 'opposed') {
                     slots -= 2;
-                } else {
-                    slots--;
+                    return;
                 }
-            }, this));
-        } else if (category == 'cleric' || category == 'druid' || category == 'inquisitor') {
-            // TODO multi-class cleric/druid/inquisitor?
-            $.each(prepared, $.proxy(function (index, spellName) {
-                var domainMatch = $.grep(this.selectedDomains, $.proxy(function (domain) {
-                    var domainName;
-                    if ($.isArray(domain)) {
-                        domainName = 'Domain: ' + domain[1];
-                    } else {
-                        domainName = 'Domain: ' + domain;
-                    }
-                    return (this.knownSpells[domainName][level].indexOf(spellName) >= 0)
-                }, this ));
-                if (domainMatch.length > 0 && haveBonusSlot) {
-                    haveBonusSlot = false;
-                } else {
-                    slots--;
-                }
-            }, this));
-        } else {
-            slots -= prepared.length;
-        }
-        if (haveBonusSlot && level > 0 && this.classSlots[category].slots[level] > 0) {
-            if (category == 'wiz') {
-                var favoured = $.grep(Object.keys(this.selectedSchools), $.proxy(function (school) {
-                    return (this.selectedSchools[school] == 'favoured');
-                }, this));
-                if (favoured.length > 0) {
-                    return [slots, ' 1 ' + favoured.join(', ') + ' slot'];
-                }
-            } else if ((category == 'cleric' || category == 'druid' || category == 'inquisitor') && this.selectedDomains.length > 0) {
-                return [slots, ' 1 domain slot'];
             }
+            if (hasDomainSlot) {
+                var domainMatch = $.grep(this.selectedDomains, $.proxy(function (domain) {
+                    if ($.isArray(domain)) {
+                        domain = domain[1];
+                    }
+                    if (this.categoryAssociations.Domain[domain] != classHeading) {
+                        return false;
+                    }
+                    return (this.knownSpells['Domain: ' + domain][level].indexOf(spellName) >= 0)
+                }, this ));
+                if (domainMatch.length > 0) {
+                    hasDomainSlot = false;
+                    return
+                }
+            }
+            // Otherwise, just use up a regular slot
+            slots--;
+        }, this));
+        var extra = '';
+        if (hasSchoolSlot) {
+            extra += ' 1 ' + favouredSchool + ' slot';
         }
-        return [slots, ''];
-        // TODO other classes with special rules?
+        if (hasDomainSlot) {
+            if (extra) {
+                extra += ' and';
+            }
+            extra += ' 1 domain slot';
+        }
+        return [slots, extra];
     },
 
     updatePreparedDivText: function (level, category) {
         var preparedDiv = $(`#preparedDiv_${category.toId()}_${level}`);
-        var slotUsage = this.calculatePreparedSlotsLeft(level, category);
+        var slotUsage = this.calculatePreparedSlotsLeft(category, level);
         var slotsLeft = slotUsage[0];
         var extra = slotUsage[1];
         if (slotsLeft < 0 && extra) {
@@ -1590,19 +1655,20 @@ var BookMenu = Class.create({
         } else if (slotsLeft == 0 && extra) {
             preparedDiv.contents().first().replaceWith('Prepared spells:' + extra + ' remaining');
             preparedDiv.removeClass('negativeSlots');
-//            preparedDiv.droppable('option', 'accept', 'noSuchThing');
         } else if (slotsLeft == 0) {
             preparedDiv.contents().first().replaceWith('Prepared spells: no slots remaining');
             preparedDiv.removeClass('negativeSlots');
-//            preparedDiv.droppable('option', 'accept', 'noSuchThing');
         } else {
             preparedDiv.removeClass('negativeSlots');
             if (extra) {
-                extra = ' and' + extra;
+                if (extra.indexOf(' and') >= 0) {
+                    extra = ',' + extra;
+                } else {
+                    extra = ' and' + extra;
+                }
             }
             if (slotsLeft == 1) {
                 preparedDiv.contents().first().replaceWith('Prepared spells: 1 slot' + extra + ' remaining');
-//                preparedDiv.droppable('option', 'accept', preparedDiv.data('psb_accept_backup'));
             } else {
                 preparedDiv.contents().first().replaceWith('Prepared spells: ' + slotsLeft + ' slots' + extra + ' remaining');
             }
@@ -1619,26 +1685,27 @@ var BookMenu = Class.create({
         if (droppable.is('.knownSpellsDiv')) {
             ui.draggable.hide();
             level = $(ui.draggable.context).data('psb_preparedLevel');
-            var index = this.copyPreparedSpells[category][level].indexOf(spellKey);
+            var index = this.copy.preparedSpells[category][level].indexOf(spellKey);
             if (index >= 0) {
-                this.copyPreparedSpells[category][level].splice(index, 1);
+                this.copy.preparedSpells[category][level].splice(index, 1);
                 this.updatePreparedDivText(level, category);
             }
         } else {
             level = droppable.data('psb_level');
-            if (!this.copyPreparedSpells[category]) {
-                this.copyPreparedSpells[category] = {};
+            if (!this.copy.preparedSpells[category]) {
+                this.copy.preparedSpells[category] = {};
             }
-            if (!this.copyPreparedSpells[category][level]) {
-                this.copyPreparedSpells[category][level] = [];
+            if (!this.copy.preparedSpells[category][level]) {
+                this.copy.preparedSpells[category][level] = [];
             }
-            this.copyPreparedSpells[category][level].push(spellKey);
+            this.copy.preparedSpells[category][level].push(spellKey);
             this.addPreparedSpell(spell, level, category);
         }
     },
 
     onPrepareSpellsApplyButton: function () {
-        this.preparedSpells = this.copyPreparedSpells;
+        this.preparedSpells = this.copy.preparedSpells;
+        this.copy = null;
         this.storage.set(BookKeys.keyPreparedSpells, this.preparedSpells);
         this.back();
     },
