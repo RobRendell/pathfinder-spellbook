@@ -448,7 +448,7 @@ var TopMenu = Class.create({
         this.spellData = spellData;
         this.bookData = {};
         this.bookMenu = {};
-        var bookIDs = globalSettings.get(BookKeys.keyBookIDs);
+        var bookIDs = globalSettings.get(BookKeys.keyBookIDs, []);
         $.each(bookIDs, $.proxy(function (index, bookID) {
             this.bookData[bookID] = new Storage(bookID);
         }, this));
@@ -717,11 +717,15 @@ var BookMenu = Class.create({
         this.copy = $.extend(true, {}, {
             selectedSources: this.selectedSources,
             selectedClasses: this.selectedClasses,
-            selectedDomains: this.selectedDomains.toString().split(/,/).sort($.proxy(this.domainCompare, this)),
             selectedBloodlines: this.selectedBloodlines,
             selectedPatrons: this.selectedPatrons,
             selectedSchools: this.selectedSchools
         });
+        if (this.selectedDomains.length > 0) {
+            this.copy.selectedDomains = this.selectedDomains.toString().split(/,/).sort($.proxy(this.domainCompare, this));
+        } else {
+            this.copy.selectedDomains = [];
+        }
         this.resetCheckboxes('sourcebook', this.copy.selectedSources, 'source');
         this.resetCheckboxes('class', this.copy.selectedClasses, 'class');
         this.resetCheckboxes('domain', this.copy.selectedDomains, 'domain');
@@ -748,7 +752,7 @@ var BookMenu = Class.create({
     refreshSelectedSources: function (source, enabled) {
         this.changeSelection(this.copy.selectedSources, source, enabled, $.proxy(this.spellData.sourceSort, this.spellData));
         if (this.copy.selectedSources.length > 0) {
-            $('#sourceNames').text('Source books: ' + this.selectedSources.join(', '));
+            $('#sourceNames').text('Source books: ' + this.copy.selectedSources.join(', '));
         } else {
             $('#sourceNames').text('Source books: none selected');
         }
@@ -760,7 +764,7 @@ var BookMenu = Class.create({
     },
 
     showOptionsForSourceSelection: function (sourceMap, prefix, current) {
-        var values = this.spellData.valuesFromSourceMap(sourceMap, this.selectedSources);
+        var values = this.spellData.valuesFromSourceMap(sourceMap, this.copy.selectedSources);
         $(`.${prefix}Label`).hide();
         $.each(values.concat(current), function (index, value) {
             $(`#${prefix}_${value.toId()}`).parent().show();
@@ -769,7 +773,7 @@ var BookMenu = Class.create({
 
     refreshSelectedClasses: function (classHeading, enabled) {
         this.changeSelection(this.copy.selectedClasses, classHeading, enabled, undefined);
-        var selectedClassNames = this.selectedClasses.map($.proxy(function (key) {
+        var selectedClassNames = this.copy.selectedClasses.map($.proxy(function (key) {
             return this.spellData.classNames[key];
         }, this));
         this.refreshSelection('Character classes: ', $('#classNames'), selectedClassNames);
