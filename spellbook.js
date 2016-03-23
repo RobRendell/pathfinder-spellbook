@@ -9,6 +9,12 @@ String.prototype.toTitleCase = function () {
     });
 }
 
+if (!String.prototype.trim) {
+    String.prototype.trim = function () {
+        return this.replace(/^\s+|\s+$/g, '');
+    };
+}
+
 Number.prototype.ordinal = function () {
     var suffix = ["th","st","nd","rd"];
     var value = this % 100;
@@ -447,7 +453,8 @@ var BookKeys = {
     keyCategoryAssociations: 'categoryAssociations',
     keyClassSlots: 'classSlots',
     keyKnownSpells: 'knownSpells',
-    keyPreparedSpells: 'preparedSpells'
+    keyPreparedSpells: 'preparedSpells',
+    keySavedSpellLists: 'savedSpellLists'
 };
 
 var TopMenu = Class.create({
@@ -617,6 +624,7 @@ var BookMenu = Class.create({
         this.classSlots = this.storage.get(BookKeys.keyClassSlots, {});
         this.knownSpells = this.storage.get(BookKeys.keyKnownSpells, {});
         this.preparedSpells = this.storage.get(BookKeys.keyPreparedSpells, {});
+        this.savedSpellLists = this.storage.get(BookKeys.keySavedSpellLists, {});
         // Set up elements
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
@@ -672,6 +680,10 @@ var BookMenu = Class.create({
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
         $('#adventuringChangeSpellsButton').on('tap', function () { setCurrentView('prepareSpellsPanel'); });
         $('#prepareSpellsApplyButton').on('tap', $.proxy(this.onPrepareSpellsApplyButton, this));
+        $('#prepareSpellsStoreButton').on('tap', function () { setCurrentView('spellStorePanel'); });
+        $('#spellStoreSaveButton').on('tap', $.proxy(this.onSpellStoreSaveButton, this));
+        $('#spellStoreLoadButton').on('tap', $.proxy(this.onSpellStoreLoadButton, this));
+        $('#spellStoreDeleteButton').on('tap', $.proxy(this.onSpellStoreDeleteButton, this));
         // Show current panel
         this.setCurrentView(this.globalSettings.get(BookKeys.keyCurrentPanel, 'menu'));
     },
@@ -703,6 +715,9 @@ var BookMenu = Class.create({
             } else if (view == 'prepareSpellsPanel') {
                 $('#prepareSpellsPanel').fadeIn();
                 this.showPrepareSpellsPanel();
+            } else if (view == 'spellStorePanel') {
+                $('#spellStorePanel').fadeIn();
+                this.showSpellStorePanel();
             } else {
                 console.error('Unknown view name: ' + view);
             }
@@ -716,6 +731,8 @@ var BookMenu = Class.create({
             $('.panel').fadeOut();
             if (this.currentView == 'menu') {
                 this.setCurrentView('');
+            } else if (this.currentView == 'spellStorePanel') {
+                this.setCurrentView('prepareSpellsPanel');
             } else if (this.currentView == 'prepareSpellsPanel') {
                 this.setCurrentView('adventuringPanel');
             } else {
@@ -1266,17 +1283,6 @@ var BookMenu = Class.create({
         }, this));
     },
 
-    saveKnownOrPreparedSpells: function (key, spellMap) {
-        $.each(spellMap, $.proxy(function (category, spellsByLevel) {
-            var save = [];
-            $.each(spellsByLevel, $.proxy(function (level, spellKeyList) {
-                save.push(level);
-                save.push.apply(save, spellKeyList);
-            }, this));
-            this.storage.set(key + category.toId(), save);
-        }, this));
-    },
-
     showAdventuringPanel: function () {
         $('#adventuringSpells').off('.adventureControl');
         $('#adventuringRestButton').hide();
@@ -1474,10 +1480,12 @@ var BookMenu = Class.create({
     },
 
     showPrepareSpellsPanel: function () {
-        this.copy = {
-            preparedSpells: $.extend(true, {}, this.preparedSpells)
-        };
-        $('#preparedSpells .ui-accordion').accordion('destroy');
+        if (!this.copy || !this.copy.preparedSpells) {
+            this.copy = {
+                preparedSpells: $.extend(true, {}, this.preparedSpells)
+            };
+        }
+        $('#preparedSpells.ui-accordion').accordion('destroy');
         $('#preparedSpells .ui-draggable').draggable('destroy');
         $('#preparedSpells .ui-droppable').droppable('destroy');
         this.showLoading($('#preparedSpells'), $.proxy(this.populatePrepareSpellsPanel, this));
@@ -1709,6 +1717,60 @@ var BookMenu = Class.create({
         this.storage.set(BookKeys.keyPreparedSpells, this.preparedSpells);
         this.back();
     },
+
+    showSpellStorePanel: function () {
+        this.showLoading($('#spellStore'), $.proxy(this.populateSpellStorePanel, this));
+    },
+
+    populateSpellStorePanel: function () {
+        $.each(this.savedSpellLists, $.proxy(function (listName, list) {
+            this.appendSavedList(listName, list);
+        }, this));
+    },
+
+    appendSavedList: function (listName, list) {
+        var listElt = $('<div/>').addClass('savedSpellLists').text(listName).data('name', listName);
+        $('#spellStore').append(listElt);
+        listElt.on('tap', $.proxy(function (evt) {
+            $('.selectedSpellList').removeClass('selectedSpellList');
+            $(evt.currentTarget).addClass('selectedSpellList');
+        }, this));
+    },
+
+    onSpellStoreSaveButton: function (evt) {
+        var selectedName = $('.selectedSpellList').data('name') || undefined;
+        var listName = window.prompt("Enter a name for your saved spell list.", selectedName).trim();
+        if (listName) {
+            if (this.savedSpellLists[listName]) {
+                if (!window.confirm('Overwrite ' + listName + ' list?')) {
+                    return;
+                }
+            }
+            var list = this.copy.preparedSpells || this.preparedSpells;
+            this.savedSpellLists[listName] = $.extend(true, {}, list);
+            this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
+            this.appendSavedList(listName, this.savedSpellLists[listName]);
+        }
+    },
+
+    onSpellStoreLoadButton: function (evt) {
+        var selectedName = $('.selectedSpellList').data('name');
+        if (selectedName) {
+            this.copy = {
+                preparedSpells: $.extend(true, {}, this.savedSpellLists[selectedName])
+            };
+            this.back();
+        }
+    },
+
+    onSpellStoreDeleteButton: function (evt) {
+        var selectedName = $('.selectedSpellList').data('name');
+        if (selectedName && window.confirm('Delete saved "' + selectedName + '" list?')) {
+            delete(this.savedSpellLists[selectedName]);
+            this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
+            $('.selectedSpellList').remove();
+        }
+    }
 
 });
 

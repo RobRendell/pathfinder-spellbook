@@ -1,16 +1,16 @@
-Save/load named prepared spell loadouts for a given class.
-
-Bloodlines and Patron spells.
+Bonus slots (school/domain), slots used by opposed schools etc. aren't reported in adventuring tab when you haven't memorized as much as you can.
 
 Style favoured school/opposing school/domain spell (border)
 
-Think about ways to improve the preparation interface... perhaps have the known spells on the LHS in an accordion, and the prepared slots on the RHS scrolling independently?
+Bloodlines and Patron spells.
 
-Selecting prepared spells loses its accordion?
+Think about ways to improve the preparation interface... perhaps have the known spells on the LHS in an accordion, and the prepared slots on the RHS scrolling independently?
 
 Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
 
 Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
+
+Don't show spells in preparation tab when daily slots == 0, even if some are marked as known.
 
 "Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.  Set all/clear all in details panel too?
 

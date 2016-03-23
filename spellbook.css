@@ -264,6 +264,18 @@ body {
     padding: 0 0.5em;
 }
 
+.savedSpellLists {
+    height: 2em;
+    max-width: 20em;
+    border: 1px solid black;
+    background-color: #aaa;
+    margin: 0 auto 2em auto;
+}
+
+.savedSpellLists.selectedSpellList {
+    background-color: #C9BC0F;
+}
+
 @media only screen and (max-width: 480px) {
 
     .book {
