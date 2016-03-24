@@ -156,6 +156,14 @@ body {
     z-index: 5;
 }
 
+.spell.bonus .view {
+    background: #484;
+}
+
+.spell.opposed .view {
+    background: #c44;
+}
+
 .spell.ui-draggable-dragging {
     z-index: 10;
 }

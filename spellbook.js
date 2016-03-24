@@ -1253,6 +1253,7 @@ var BookMenu = Class.create({
         this.buildSpellsKnown(this.selectedClasses, '');
         this.buildSpellsKnown(this.selectedBloodlines, 'Bloodline: ');
         this.buildSpellsKnown(this.selectedDomains, 'Domain: ');
+        this.setDomainAll();
         this.buildSpellsKnown(this.selectedPatrons, 'Patron: ');
         this.storage.set(BookKeys.keyKnownSpells, this.knownSpells);
         this.back();
@@ -1280,6 +1281,21 @@ var BookMenu = Class.create({
                 known[level].push(spellKey);
             }, this));
             this.knownSpells[category] = known;
+        }, this));
+    },
+
+    setDomainAll: function () {
+        $.each(this.selectedDomains, $.proxy(function (index, domain) {
+            var all = [], category;
+            if ($.isArray(domain)) {
+                category = 'Domain: ' + domain[1];
+            } else {
+                category = 'Domain: ' + value;
+            }
+            $.each(this.knownSpells[category], function (level, spellList) {
+                all = all.concat(spellList);
+            });
+            this.knownSpells[category]['all'] = all;
         }, this));
     },
 
@@ -1346,7 +1362,8 @@ var BookMenu = Class.create({
                         spellKey = spellKey.substr(0, spellKey.length - 1);
                     }
                     var spell = this.spellData.spellByName[spellKey];
-                    var element = this.appendSpellLine(currentDiv, spell, undefined, level - spell[value]);
+                    var spellLevel = this.getSpellLevel(value, spell);
+                    var element = this.appendSpellLine(currentDiv, spell, undefined, level - spellLevel);
                     element.data('psb_level', level);
                     element.on('tap.adventureControl press.adventureControl', clickFn);
                     if (isUsed) {
@@ -1362,6 +1379,19 @@ var BookMenu = Class.create({
                 }
             }, this));
         }, this));
+    },
+
+    getSpellLevel: function (classHeading, spell) {
+        var level = spell[classHeading];
+        for (var index = 0; level === undefined && index < this.selectedDomains.length; ++index) {
+            var domain = this.selectedDomains[index];
+            if ($.isArray(domain)) {
+                level = spell['Domain: ' + domain[1]] || spell['Domain: ' + domain[0]];
+            } else {
+                level = spell['Domain: ' + domain];
+            }
+        }
+        return level;
     },
 
     createCheckboxControl: function (element, spellsPerDay, slotsToday, slotKey, heading) {
@@ -1582,11 +1612,35 @@ var BookMenu = Class.create({
         $.each(knownSpells.sort().uniq(), $.proxy(function (index, spellKey) {
             var spell = this.spellData.spellByName[spellKey];
             this.appendSpellLine(levelDiv, spell).addClass('knownSpells' + level)
-            .draggable({
-                'helper': 'clone',
-                'revert': 'invalid'
-            });
+                    .addClass(this.getDecorationClassForSpell(classHeading, spell))
+                    .draggable({
+                        'helper': 'clone',
+                        'revert': 'invalid'
+                    });
         }, this));
+    },
+
+    getDecorationClassForSpell: function (classHeading, spell) {
+        var result = ' ';
+        var school = spell.school.toTitleCase();
+        if (this.categoryAssociations.School && this.categoryAssociations.School[school] == classHeading) {
+            if (this.selectedSchools[school] == 'favoured') {
+                result += 'bonus ';
+            } else if (this.selectedSchools[school] == 'opposed') {
+                result += 'opposed ';
+            }
+        }
+        $.each(this.selectedDomains, $.proxy(function(index, domain) {
+            if ($.isArray(domain)) {
+                domain = domain[1];
+            }
+            if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading) {
+                if (this.knownSpells['Domain: ' + domain]['all'].indexOf(spell.name.toLowerCase()) >= 0) {
+                    result += 'bonus ';
+                }
+            }
+        }, this));
+        return result.substr(0, result.length - 1);
     },
 
     appendPreparedPreparedSpells: function (preparedDiv, classHeading, level, acceptSelector) {
@@ -1614,10 +1668,12 @@ var BookMenu = Class.create({
     },
 
     addPreparedSpell: function (element, spell, level, category) {
-        var overLevel = level - spell[category];
+        var spellLevel = this.getSpellLevel(category, spell);
+        var overLevel = level - spellLevel;
         this.appendSpellLine(element, spell, undefined, overLevel)
                 .data('psb_preparedLevel', level)
                 .addClass('preparedSpell')
+                .addClass(this.getDecorationClassForSpell(category, spell))
                 .draggable({
                     'containment': '.prepareCategory.' + category.toId(),
                     'revert': 'invalid'
@@ -1660,7 +1716,7 @@ var BookMenu = Class.create({
                     if (this.categoryAssociations.Domain[domain] != classHeading) {
                         return false;
                     }
-                    return (this.knownSpells['Domain: ' + domain][level].indexOf(spellName) >= 0)
+                    return (this.knownSpells['Domain: ' + domain]['all'].indexOf(spellName) >= 0)
                 }, this ));
                 if (domainMatch.length > 0) {
                     hasDomainSlot = false;

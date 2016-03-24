@@ -1,6 +1,4 @@
 
-Style favoured school/opposing school/domain spell (border)
-
 Bloodlines and Patron spells.
 
 Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
