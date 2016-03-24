@@ -153,6 +153,11 @@ body {
     border: 1px solid #777;
     display: flex;
     justify-content: space-between;
+    z-index: 5;
+}
+
+.spell.ui-draggable-dragging {
+    z-index: 10;
 }
 
 .spell .title {
@@ -232,20 +237,30 @@ body {
 .prepareCategory {
     width: 42em;
     margin: 0 auto;
-}
-
-.prepareCategory > div {
     display: flex;
 }
 
-.prepareCategory > div > div {
+.prepareCategory > div {
     flex: 1;
-    border: 1px solid black;
     padding: 0.5em;
 }
 
+.preparedDiv {
+    align-self: flex-start;
+    position: relative;
+}
+
+.preparedSpellsDiv {
+    min-height: 3em;
+    overflow: visible !important;
+}
+
+.preparedSpellsDiv + .preparedSpellsDiv {
+    margin-top: 1em;
+}
+
 .negativeSlots {
-    color: red;
+    color: red !important;
 }
 
 .droppableHighlight {
@@ -298,7 +313,7 @@ body {
     }
 
     .prepareCategory {
-        width: 80vw;
+        width: 82vw;
     }
 
     #preparedSpells.ui-accordion .ui-accordion-content,

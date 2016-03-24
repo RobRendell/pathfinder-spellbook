@@ -940,7 +940,7 @@ var BookMenu = Class.create({
         element.after(spinner);
         window.setTimeout(function () {
             endFn();
-            spinner.remove();
+            $('.spinner').remove();
         }, 500);
     },
 
@@ -1354,11 +1354,10 @@ var BookMenu = Class.create({
                     }
                 }, this));
                 if (slotData.slotType == this.textPreparedSlots) {
-                    var unused = slotData.slots[level] - spellKeyList.length;
-                    if (unused == 1) {
-                        currentDiv.append($('<div/>').text('1 unused spell slot'));
-                    } else if (unused > 0) {
-                        currentDiv.append($('<div/>').text(unused + ' unused spell slots'));
+                    var slotUsage = this.calculatePreparedSlotsLeft(value, level);
+                    if (slotUsage[0] != 0) {
+                        var text = this.getPreparedSlotsLeftText(slotUsage).replace('remaining', 'unused');
+                        currentDiv.append($('<div/>').text(text));
                     }
                 }
             }, this));
@@ -1485,28 +1484,41 @@ var BookMenu = Class.create({
                 preparedSpells: $.extend(true, {}, this.preparedSpells)
             };
         }
-        $('#preparedSpells.ui-accordion').accordion('destroy');
-        $('#preparedSpells .ui-draggable').draggable('destroy');
-        $('#preparedSpells .ui-droppable').droppable('destroy');
+        $('#prepareSpellsPanel').off('.prepareSpells');
+        $('#prepareSpellsPanel .ui-accordion').accordion('destroy');
+        $('#prepareSpellsPanel .ui-draggable').draggable('destroy');
+        $('#prepareSpellsPanel .ui-droppable').droppable('destroy');
         this.showLoading($('#preparedSpells'), $.proxy(this.populatePrepareSpellsPanel, this));
     },
 
     populatePrepareSpellsPanel: function () {
-        this.createPrepareSpellSection();
-        $('#preparedSpells').accordion({
-            collapsible: true,
-            heightStyle: "content"
-        });
-    },
-
-    createPrepareSpellSection: function () {
         $.each(this.selectedClasses, $.proxy(function (index, value) {
             var slotData = this.classSlots[value];
             if (slotData && slotData.slotType == this.textPreparedSlots) {
                 var name = this.spellData.classNames[value];
-                $('#preparedSpells').append($('<h3 />').text(name));
+                $('#preparedSpells').addClass('accordion').append($('<h3 />').text(name));
                 var currentDiv = $('<div class="prepareCategory" />').addClass(value.toId());
                 $('#preparedSpells').append(currentDiv);
+                var knownDiv = $('<div/>').addClass('accordion').text('Known spells');
+                var preparedDiv = $('<div/>').addClass('accordion preparedDiv').text('Prepared spells');
+                $(window).on('scroll.prepareSpells', function (evt) {
+                    if (!preparedDiv.is(':hidden')) {
+                        var max = currentDiv.height() - preparedDiv.innerHeight();
+                        var openedLevel = knownDiv.find('.ui-accordion-header-active').data('level') || 0;
+                        var preparedHeading = preparedDiv.find('h4').eq(openedLevel);
+                        var offset = $(window).scrollTop() - knownDiv.offset().top - preparedHeading.position().top +
+                                $('.back').height();
+                        if (offset > max) {
+                            preparedDiv.css({ 'margin-top': max });
+                        } else if (offset > 0) {
+                            preparedDiv.css({ 'margin-top': offset });
+                        } else {
+                            preparedDiv.css({ 'margin-top': 0 });
+                        }
+                    }
+                });
+                currentDiv.append(knownDiv);
+                currentDiv.append(preparedDiv);
                 this.spellData.rawData.sort(this.orderSpellsByFields(value, 'name'));
                 if (!this.knownSpells[value]) {
                     this.knownSpells[value] = {};
@@ -1514,81 +1526,103 @@ var BookMenu = Class.create({
                 if (!this.copy.preparedSpells[value]) {
                     this.copy.preparedSpells[value] = {};
                 }
-                var knownDiv, preparedDiv;
-                var acceptSelector = 'noSuchThing';
                 var maxLevel = 9; // TODO
+                var acceptSelector = 'noSuchThing';
                 for (var level = 0; level < maxLevel; ++level) {
-                    if (!slotData.slots[level] && !this.knownSpells[value][level]) {
+                    if (!slotData.slots[level]) {
                         continue;
                     }
                     if (!this.knownSpells[value][level]) {
                         this.knownSpells[value][level] = [];
                     }
+                    this.appendPreparedKnownSpells(knownDiv, value, level);
                     if (!this.copy.preparedSpells[value][level]) {
                         this.copy.preparedSpells[value][level] = [];
                     }
-                    var knownSpells = this.knownSpells[value][level];
-                    for (var index = 0; index < this.selectedDomains.length; ++index) {
-                        var domain = this.selectedDomains[index];
-                        if ($.isArray(domain)) {
-                            domain = domain[1];
-                        }
-                        if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == value) {
-                            domain = 'Domain: ' + domain;
-                            if (!this.knownSpells[domain]) {
-                                this.knownSpells[domain] = {};
-                            }
-                            if (!this.knownSpells[domain][level]) {
-                                this.knownSpells[domain][level] = [];
-                            }
-                            knownSpells = knownSpells.concat(this.knownSpells[domain][level]);
-                        }
-                    }
-                    knownDiv = $('<div />').addClass('knownSpellsDiv').text('Known spells')
-                            .droppable({ accept: '.preparedSpell', hoverClass: 'droppableHighlight' })
-                            .data('psb_category', value);
                     acceptSelector += ',.knownSpells' + level;
-                    preparedDiv = $('<div />').text('Prepared spells')
-                            .prop('id', `preparedDiv_${value.toId()}_${level}`)
-                            .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' });
-                    currentDiv.append($('<h4 />').text(level.ordinal() + ' level - ' + slotData.slots[level] + ' slots'));
-                    currentDiv.append($('<div />').append(knownDiv).append(preparedDiv));
-                    this.updatePreparedDivText(level, value);
-                    preparedDiv.data('psb_category', value);
-                    preparedDiv.data('psb_level', level);
-                    knownDiv.on('drop', $.proxy(this.dropSpell, this));
-                    preparedDiv.on('drop', $.proxy(this.dropSpell, this));
-                    $.each(knownSpells.sort().uniq(), $.proxy(function (index, spellKey) {
-                        var spell = this.spellData.spellByName[spellKey];
-                        this.appendSpellLine(knownDiv, spell).addClass('knownSpells' + level)
-                        .draggable({
-                            'helper': 'clone',
-                            'containment': currentDiv,
-                            'revert': 'invalid'
-                        });
-                    }, this));
-                    $.each(this.copy.preparedSpells[value][level].sort(), $.proxy(function (index, spellKey) {
-                        if (spellKey.indexOf('!') == spellKey.length - 1) {
-                            spellKey = spellKey.substr(0, spellKey.length - 1);
-                        }
-                        var spell = this.spellData.spellByName[spellKey];
-                        this.addPreparedSpell(spell, level, value);
-                    }, this));
+                    this.appendPreparedPreparedSpells(preparedDiv, value, level, acceptSelector);
                 }
             }
         }, this));
+        $('#prepareSpellsPanel .accordion').accordion({
+            collapsible: true,
+            heightStyle: "content"
+        });
     },
 
-    addPreparedSpell: function (spell, level, category) {
+    getKnownSpellsForClassAndLevel: function (classHeading, level) {
+        var knownSpells = this.knownSpells[classHeading][level];
+        for (var index = 0; index < this.selectedDomains.length; ++index) {
+            var domain = this.selectedDomains[index];
+            if ($.isArray(domain)) {
+                domain = domain[1];
+            }
+            if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading) {
+                domain = 'Domain: ' + domain;
+                if (!this.knownSpells[domain]) {
+                    this.knownSpells[domain] = {};
+                }
+                if (!this.knownSpells[domain][level]) {
+                    this.knownSpells[domain][level] = [];
+                }
+                knownSpells = knownSpells.concat(this.knownSpells[domain][level]);
+            }
+        }
+        return knownSpells;
+    },
+
+    appendPreparedKnownSpells: function (knownDiv, classHeading, level) {
+        var knownSpells = this.getKnownSpellsForClassAndLevel(classHeading, level);
+        knownDiv.append($('<h4/>').text(level.ordinal() + ' level').data('level', level));
+        var levelDiv = $('<div />').addClass('knownSpellsDiv')
+                .droppable({ accept: '.preparedSpell', hoverClass: 'droppableHighlight' })
+                .data('psb_category', classHeading);
+        knownDiv.append(levelDiv);
+        levelDiv.on('drop', $.proxy(this.dropSpell, this));
+        $.each(knownSpells.sort().uniq(), $.proxy(function (index, spellKey) {
+            var spell = this.spellData.spellByName[spellKey];
+            this.appendSpellLine(levelDiv, spell).addClass('knownSpells' + level)
+            .draggable({
+                'helper': 'clone',
+                'revert': 'invalid'
+            });
+        }, this));
+    },
+
+    appendPreparedPreparedSpells: function (preparedDiv, classHeading, level, acceptSelector) {
+        var heading = $('<h4 />').append($('<span/>'))
+                .prop('id', `preparedHeading_${classHeading.toId()}_${level}`)
+                .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' })
+                .data('psb_category', classHeading)
+                .data('psb_level', level)
+                .on('drop', $.proxy(this.dropSpell, this));
+        preparedDiv.append(heading);
+        var levelDiv = $('<div />').addClass('preparedSpellsDiv')
+                .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' })
+                .data('psb_category', classHeading)
+                .data('psb_level', level)
+                .on('drop', $.proxy(this.dropSpell, this));
+        preparedDiv.append(levelDiv);
+        this.updatePreparedHeading(level, classHeading);
+        $.each(this.copy.preparedSpells[classHeading][level].sort(), $.proxy(function (index, spellKey) {
+            if (spellKey.indexOf('!') == spellKey.length - 1) {
+                spellKey = spellKey.substr(0, spellKey.length - 1);
+            }
+            var spell = this.spellData.spellByName[spellKey];
+            this.addPreparedSpell(levelDiv, spell, level, classHeading);
+        }, this));
+    },
+
+    addPreparedSpell: function (element, spell, level, category) {
         var overLevel = level - spell[category];
-        this.appendSpellLine($(`#preparedDiv_${category.toId()}_${level}`), spell, undefined, overLevel)
+        this.appendSpellLine(element, spell, undefined, overLevel)
                 .data('psb_preparedLevel', level)
                 .addClass('preparedSpell')
                 .draggable({
                     'containment': '.prepareCategory.' + category.toId(),
                     'revert': 'invalid'
                 });
-        this.updatePreparedDivText(level, category);
+        this.updatePreparedHeading(level, category);
     },
 
     calculatePreparedSlotsLeft: function (classHeading, level) {
@@ -1604,7 +1638,7 @@ var BookMenu = Class.create({
             }
             return (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading);
         }, this)) >= 0;
-        var prepared = this.copy.preparedSpells[classHeading][level];
+        var prepared = ((this.copy && this.copy.preparedSpells) || this.preparedSpells)[classHeading][level];
         $.each(prepared, $.proxy(function (index, spellName) {
             var spell = this.spellData.spellByName[spellName.toLowerCase()];
             var school = spell.school.toTitleCase();
@@ -1649,25 +1683,34 @@ var BookMenu = Class.create({
         return [slots, extra];
     },
 
-    updatePreparedDivText: function (level, category) {
-        var preparedDiv = $(`#preparedDiv_${category.toId()}_${level}`);
+    updatePreparedHeading: function (level, category) {
+        var preparedHeading = $(`#preparedHeading_${category.toId()}_${level}`);
         var slotUsage = this.calculatePreparedSlotsLeft(category, level);
+        var text = level.ordinal() + ' level:' + this.getPreparedSlotsLeftText(slotUsage);
         var slotsLeft = slotUsage[0];
         var extra = slotUsage[1];
-        if (slotsLeft < 0 && extra) {
-            preparedDiv.contents().first().replaceWith('Prepared spells:' + extra + ' remaining but ' + -slotsLeft + ' slots over!');
-            preparedDiv.addClass('negativeSlots');
-        } else if (slotsLeft < 0) {
-            preparedDiv.contents().first().replaceWith('Prepared spells: ' + -slotsLeft + ' slots over!');
-            preparedDiv.addClass('negativeSlots');
-        } else if (slotsLeft == 0 && extra) {
-            preparedDiv.contents().first().replaceWith('Prepared spells:' + extra + ' remaining');
-            preparedDiv.removeClass('negativeSlots');
-        } else if (slotsLeft == 0) {
-            preparedDiv.contents().first().replaceWith('Prepared spells: no slots remaining');
-            preparedDiv.removeClass('negativeSlots');
+        preparedHeading.find('span').text(text);
+        if (slotsLeft < 0) {
+            preparedHeading.addClass('negativeSlots');
         } else {
-            preparedDiv.removeClass('negativeSlots');
+            preparedHeading.removeClass('negativeSlots');
+        }
+    },
+
+    getPreparedSlotsLeftText: function (slotUsage) {
+        var slotsLeft = slotUsage[0];
+        var extra = slotUsage[1];
+        var text = '';
+        var slots = (slotsLeft == -1 || slotsLeft == 1) ? ' slot' : ' slots';
+        if (slotsLeft < 0 && extra) {
+            text += extra + ' remaining but ' + -slotsLeft + slots + ' over!';
+        } else if (slotsLeft < 0) {
+            text += ' ' + -slotsLeft + slots + ' over!';
+        } else if (slotsLeft == 0 && extra) {
+            text += extra + ' remaining';
+        } else if (slotsLeft == 0) {
+            text += ' no slots remaining';
+        } else {
             if (extra) {
                 if (extra.indexOf(' and') >= 0) {
                     extra = ',' + extra;
@@ -1675,12 +1718,9 @@ var BookMenu = Class.create({
                     extra = ' and' + extra;
                 }
             }
-            if (slotsLeft == 1) {
-                preparedDiv.contents().first().replaceWith('Prepared spells: 1 slot' + extra + ' remaining');
-            } else {
-                preparedDiv.contents().first().replaceWith('Prepared spells: ' + slotsLeft + ' slots' + extra + ' remaining');
-            }
+            text +=' ' + slotsLeft + slots + extra + ' remaining';
         }
+        return text;
     },
 
     dropSpell: function (evt, ui) {
@@ -1696,7 +1736,7 @@ var BookMenu = Class.create({
             var index = this.copy.preparedSpells[category][level].indexOf(spellKey);
             if (index >= 0) {
                 this.copy.preparedSpells[category][level].splice(index, 1);
-                this.updatePreparedDivText(level, category);
+                this.updatePreparedHeading(level, category);
             }
         } else {
             level = droppable.data('psb_level');
@@ -1707,7 +1747,24 @@ var BookMenu = Class.create({
                 this.copy.preparedSpells[category][level] = [];
             }
             this.copy.preparedSpells[category][level].push(spellKey);
-            this.addPreparedSpell(spell, level, category);
+            var target = evt.currentTarget;
+            if (target.tagName.toLowerCase() == 'h4') {
+                target = $(target).next();
+            } else {
+                target = $(target);
+            }
+            this.addPreparedSpell(target, spell, level, category);
+            target.children().sort(function (o1, o2) {
+                var v1 = $(o1).find('.title').text();
+                var v2 = $(o2).find('.title').text();
+                if (v1 < v2) {
+                    return -1;
+                } else if (v1 > v2) {
+                    return 1;
+                } else {
+                    return 0;
+                }
+            }).detach().appendTo(target);
         }
     },
 

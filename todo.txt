@@ -1,10 +1,7 @@
-Bonus slots (school/domain), slots used by opposed schools etc. aren't reported in adventuring tab when you haven't memorized as much as you can.
 
 Style favoured school/opposing school/domain spell (border)
 
 Bloodlines and Patron spells.
-
-Think about ways to improve the preparation interface... perhaps have the known spells on the LHS in an accordion, and the prepared slots on the RHS scrolling independently?
 
 Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
 
