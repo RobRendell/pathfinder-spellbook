@@ -657,12 +657,12 @@ var BookMenu = Class.create({
         $('.bloodline').on('change', $.proxy(function (evt) {
             var checkbox = $(evt.target);
             this.changeSelection(this.copy.selectedBloodlines, checkbox.attr('name'), checkbox.prop('checked'));
-            this.refreshSelection('Bloodline: ', $('#bloodlineChoice'), this.selectedBloodlines);
+            this.refreshSelection('Bloodline: ', $('#bloodlineChoice'), this.copy.selectedBloodlines);
         }, this));
         $('.patron').on('change', $.proxy(function (evt) {
             var checkbox = $(evt.target);
             this.changeSelection(this.copy.selectedPatrons, checkbox.attr('name'), checkbox.prop('checked'));
-            this.refreshSelection('Patron: ', $('#patronChoice'), this.selectedPatrons);
+            this.refreshSelection('Patron: ', $('#patronChoice'), this.copy.selectedPatrons);
         }, this));
         $('.school').on('change', $.proxy(function (evt) {
             var select = $(evt.target);
@@ -1325,7 +1325,7 @@ var BookMenu = Class.create({
                 spellsToday = this.preparedSpells[value] || {};
                 $('#adventuringChangeSpellsButton').show();
             } else {
-                spellsToday = this.knownSpells[value] || {};
+                spellsToday = this.getKnownSpellsForClass(value);
             }
             if (Object.keys(spellsToday).length > 0) {
                 $('#adventuringRestButton').show();
@@ -1580,24 +1580,39 @@ var BookMenu = Class.create({
         });
     },
 
-    getKnownSpellsForClassAndLevel: function (classHeading, level) {
-        var knownSpells = this.knownSpells[classHeading][level];
-        for (var index = 0; index < this.selectedDomains.length; ++index) {
-            var domain = this.selectedDomains[index];
-            if ($.isArray(domain)) {
-                domain = domain[1];
-            }
-            if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading) {
-                domain = 'Domain: ' + domain;
-                if (!this.knownSpells[domain]) {
-                    this.knownSpells[domain] = {};
-                }
-                if (!this.knownSpells[domain][level]) {
-                    this.knownSpells[domain][level] = [];
-                }
-                knownSpells = knownSpells.concat(this.knownSpells[domain][level]);
-            }
+    getKnownSpellsForClass: function (classHeading) {
+        var maxLevel = 9; // TODO
+        var result = {};
+        for (var level = 0; level <= maxLevel; ++level) {
+            result[level] = this.getKnownSpellsForClassAndLevel(classHeading, level);
         }
+        return result;
+    },
+
+    getKnownSpellsForClassAndLevel: function (classHeading, level) {
+        var knownSpells = this.knownSpells[classHeading][level] || [];
+        knownSpells = this.concatSpellsForLevel(knownSpells, classHeading, this.categoryAssociations.Domain, this.selectedDomains, 'Domain: ', level);
+        knownSpells = this.concatSpellsForLevel(knownSpells, classHeading, this.categoryAssociations.Bloodline, this.selectedBloodlines, 'Bloodline: ', level*2 + 1);
+        knownSpells = this.concatSpellsForLevel(knownSpells, classHeading, this.categoryAssociations.Patron, this.selectedPatrons, 'Patron: ', level*2);
+        return knownSpells;
+    },
+
+    concatSpellsForLevel: function (knownSpells, classHeading, association, list, prefix, level) {
+        $.each(list, $.proxy(function (index, value) {
+            if ($.isArray(value)) {
+                value = value[1];
+            }
+            if (association && association[value] == classHeading) {
+                value = prefix + value;
+                if (!this.knownSpells[value]) {
+                    this.knownSpells[value] = {};
+                }
+                if (!this.knownSpells[value][level]) {
+                    this.knownSpells[value][level] = [];
+                }
+                knownSpells = knownSpells.concat(this.knownSpells[value][level]);
+            }
+        }, this));
         return knownSpells;
     },
 

@@ -1,13 +1,11 @@
 
-Bloodlines and Patron spells.
+"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
 
-Only show patrons if APG?  Patrons and bloodlines in Spells Known (listed by caster level rather than spell level)
+Set all/clear all in details panel too?
 
-Close dialog button (when clicking on view icon for a spell and seeing full description) not working on Android (and PC?)
+Hide 0th level slots per day for spontaneous casters
 
-Don't show spells in preparation tab when daily slots == 0, even if some are marked as known.
-
-"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.  Set all/clear all in details panel too?
+Make spellbook icons and saved spell lists sortable().
 
 Change spellData.spellByName to spellById, use name.toId() instead of toLowerCase()?
 
@@ -17,7 +15,7 @@ Embrace hash navigation fully, use it to select current book, instead of manual 
 
 In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
 
-Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation"
+Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation".  Arcane Mark, Detect Poison missing from Witch spell list.
 
 Ultimate Magic alternate specialty schools? http://paizo.com/pathfinderRPG/prd/ultimateMagic/spellcastingClassOptions/wizard.html
 
