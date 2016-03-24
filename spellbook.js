@@ -1369,7 +1369,7 @@ var BookMenu = Class.create({
         element.data('psb_spellsPerDay', spellsPerDay);
         element.data('psb_slotsToday', slotsToday);
         element.data('psb_slotKey', slotKey);
-        this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey]);
+        this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey] || 0);
         element.on('tap.adventureControl', $.proxy(this.checkboxTouchHandler, this));
         element.on('press.adventureControl', $.proxy(this.checkboxTouchHandler, this));
     },
@@ -1388,7 +1388,7 @@ var BookMenu = Class.create({
             if (slotsToday[slotKey] + delta <= spellsPerDay && slotsToday[slotKey] + delta >= 0) {
                 slotsToday[slotKey] += delta;
                 this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey]);
-                this.storage.set(BookKeys.keyKnownSpells, this.knownSpells);
+                this.storage.set(BookKeys.keyClassSlots, this.classSlots);
                 if (slotsToday[slotKey] == 0 && delta == -1) {
                     $('.' + element.prop('id')).fadeTo('fast', 0.3);
                 } else if (slotsToday[slotKey] == 1 && delta == 1) {
@@ -1447,7 +1447,7 @@ var BookMenu = Class.create({
             this.checkboxInteraction($(element), 0);
         }, this));
         $('.spell.used').removeClass('used');
-        this.storage.set(BookKeys.keyKnownSpells, this.knownSpells);
+        this.storage.set(BookKeys.keyClassSlots, this.classSlots);
         this.storage.set(BookKeys.keyPreparedSpells, this.preparedSpells);
     },
 
