@@ -1,11 +1,7 @@
 
-"Remove all" control in prepared spell panel, akin to "clear all" control in known spells panel.
-
 Set all/clear all in details panel too?
 
 Hide 0th level slots per day for spontaneous casters
-
-Make spellbook icons and saved spell lists sortable().
 
 Change spellData.spellByName to spellById, use name.toId() instead of toLowerCase()?
 

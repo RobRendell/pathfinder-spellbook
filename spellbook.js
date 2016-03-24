@@ -454,6 +454,7 @@ var BookKeys = {
     keyClassSlots: 'classSlots',
     keyKnownSpells: 'knownSpells',
     keyPreparedSpells: 'preparedSpells',
+    keySavedSpellListNames: 'savedSpellListNames',
     keySavedSpellLists: 'savedSpellLists'
 };
 
@@ -466,8 +467,8 @@ var TopMenu = Class.create({
         this.spellData = spellData;
         this.bookData = {};
         this.bookMenu = {};
-        var bookIDs = globalSettings.get(BookKeys.keyBookIDs, []);
-        $.each(bookIDs, $.proxy(function (index, bookID) {
+        this.bookIDs = globalSettings.get(BookKeys.keyBookIDs, []);
+        $.each(this.bookIDs, $.proxy(function (index, bookID) {
             this.bookData[bookID] = new Storage(bookID);
         }, this));
         // Create new elements in sub-menus
@@ -485,7 +486,7 @@ var TopMenu = Class.create({
         this.addOptionsToSelect(this.spellData.patrons, 'patron');
         var schoolOptions = [ '', 'favoured', 'opposed' ];
         $.each(this.spellData.schools, function (index, school) {
-            var schoolElt = $('<div class="school"/>').prop('id', `school_${school.toId()}`).text(school + ' ');
+            var schoolElt = $('<div class="school"/>').attr('id', `school_${school.toId()}`).text(school + ' ');
             $('#schoolItems').append(schoolElt);
             var select = $('<select />').prop('name', school);
             $.each(schoolOptions, function (index, value) {
@@ -518,7 +519,7 @@ var TopMenu = Class.create({
     },
 
     addNewBookButton: function () {
-        var button = $('<div class="book" />');
+        var button = $('<div/>').addClass('book newbook');
         button.append($('<img src="newBook.png" />'));
         button.append($('<div />').text('New spellbook'));
         button.on('tap', $.proxy(this.newSpellbookClicked, this));
@@ -530,7 +531,8 @@ var TopMenu = Class.create({
         var id = this.getNewBookID();
         var storage = new Storage(id);
         this.bookData[id] = storage;
-        this.globalSettings.set(BookKeys.keyBookIDs, Object.keys(this.bookData));
+        this.bookIDs.push(id);
+        this.globalSettings.set(BookKeys.keyBookIDs, this.bookIDs);
         storage.set(BookKeys.keyBookName, this.defaultBookName);
         this.addBookButton(id, storage);
     },
@@ -577,20 +579,35 @@ var TopMenu = Class.create({
     },
 
     refresh: function () {
+        $('#spellbooks.ui-sortable').sortable('destroy');
         var topdiv = $('#spellbooks');
         topdiv.off();
         topdiv.html('');
         this.addNewBookButton();
-        $.each(this.bookData, $.proxy(function (id, storage) {
+        $.each(this.bookIDs, $.proxy(function (index, id) {
+            var storage = this.bookData[id];
             this.addBookButton(id, storage);
         }, this));
+        topdiv.sortable({
+            items: '.book:not(.newbook)',
+            stop: $.proxy(function (evt, ui) {
+                var ids = $('.book:not(.newbook)').map(function () { return $(this).attr('id') } ).get();
+                this.bookIDs = ids;
+                this.globalSettings.set(BookKeys.keyBookIDs, ids);
+            }, this)
+        });
+        topdiv.disableSelection();
         topdiv.fadeIn();
     },
 
     deleteBook: function (id) {
-        this.bookData[id].clearAll();
-        delete(this.bookData[id]);
-        this.globalSettings.set(BookKeys.keyBookIDs, Object.keys(this.bookData));
+        var index = this.bookIDs.findIndex(id);
+        if (index >= 0) {
+            this.bookData[id].clearAll();
+            delete(this.bookData[id]);
+            this.bookIDs.splice(index, 1);
+            this.globalSettings.set(BookKeys.keyBookIDs, this.bookIDs);
+        }
     },
 
     addOptionsToSelect: function (valueList, prefix, displayFn) {
@@ -625,6 +642,7 @@ var BookMenu = Class.create({
         this.knownSpells = this.storage.get(BookKeys.keyKnownSpells, {});
         this.preparedSpells = this.storage.get(BookKeys.keyPreparedSpells, {});
         this.savedSpellLists = this.storage.get(BookKeys.keySavedSpellLists, {});
+        this.savedSpellListNames = this.storage.get(BookKeys.keySavedSpellListNames, Object.keys(this.savedSpellLists));
         // Set up elements
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
@@ -1110,8 +1128,8 @@ var BookMenu = Class.create({
             }
             var headingElt = $('<h3/>').text(name);
             accordion.append(headingElt);
-            headingElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
-            headingElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
+            headingElt.append($('<span class="headingControlLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
+            headingElt.append($('<span class="headingControlLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
             var categoryDiv = $('<div/>').addClass('accordion').addClass(value.toId());
             this.spellData.rawData.sort(this.orderSpellsByFields(subdomain || value, 'name'));
             var currentLevel, currentDiv, skipDomainSpell = false;
@@ -1134,8 +1152,8 @@ var BookMenu = Class.create({
                         if (spellLevel != currentLevel) {
                             currentLevel = spellLevel;
                             var levelElt = $('<h4 />').text('Level ' + currentLevel);
-                            levelElt.append($('<span class="spellsKnownLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
-                            levelElt.append($('<span class="spellsKnownLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
+                            levelElt.append($('<span class="headingControlLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
+                            levelElt.append($('<span class="headingControlLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
                             categoryDiv.append(levelElt);
                             currentDiv = $('<div />');
                             categoryDiv.append(currentDiv);
@@ -1420,9 +1438,9 @@ var BookMenu = Class.create({
                 this.refreshCheckboxesNOfM(element, spellsPerDay, slotsToday[slotKey]);
                 this.storage.set(BookKeys.keyClassSlots, this.classSlots);
                 if (slotsToday[slotKey] == 0 && delta == -1) {
-                    $('.' + element.prop('id')).fadeTo('fast', 0.3);
+                    $('.' + element.attr('id')).fadeTo('fast', 0.3);
                 } else if (slotsToday[slotKey] == 1 && delta == 1) {
-                    $('.' + element.prop('id')).fadeTo('fast', 1.0);
+                    $('.' + element.attr('id')).fadeTo('fast', 1.0);
                 }
             }
         }
@@ -1526,8 +1544,9 @@ var BookMenu = Class.create({
             var slotData = this.classSlots[value];
             if (slotData && slotData.slotType == this.textPreparedSlots) {
                 var name = this.spellData.classNames[value];
-                $('#preparedSpells').addClass('accordion').append($('<h3 />').text(name));
-                var currentDiv = $('<div class="prepareCategory" />').addClass(value.toId());
+                $('#preparedSpells').addClass('accordion').append($('<h3 />').text(name)
+                        .append($('<span class="headingControlLink" />').text('Clear').on('click touch', $.proxy(this.clearPreparedSpells, this))));
+                var currentDiv = $('<div class="prepareCategory" />').data('category', value);
                 $('#preparedSpells').append(currentDiv);
                 var knownDiv = $('<div/>').addClass('accordion').text('Known spells');
                 var preparedDiv = $('<div/>').addClass('accordion preparedDiv').text('Prepared spells');
@@ -1660,7 +1679,7 @@ var BookMenu = Class.create({
 
     appendPreparedPreparedSpells: function (preparedDiv, classHeading, level, acceptSelector) {
         var heading = $('<h4 />').append($('<span/>'))
-                .prop('id', `preparedHeading_${classHeading.toId()}_${level}`)
+                .attr('id', `preparedHeading_${classHeading.toId()}_${level}`)
                 .droppable({ accept: acceptSelector, hoverClass: 'droppableHighlight' })
                 .data('psb_category', classHeading)
                 .data('psb_level', level)
@@ -1672,7 +1691,7 @@ var BookMenu = Class.create({
                 .data('psb_level', level)
                 .on('drop', $.proxy(this.dropSpell, this));
         preparedDiv.append(levelDiv);
-        this.updatePreparedHeading(level, classHeading);
+        this.updatePreparedHeading(classHeading, level);
         $.each(this.copy.preparedSpells[classHeading][level].sort(), $.proxy(function (index, spellKey) {
             if (spellKey.indexOf('!') == spellKey.length - 1) {
                 spellKey = spellKey.substr(0, spellKey.length - 1);
@@ -1693,7 +1712,20 @@ var BookMenu = Class.create({
                     'containment': '.prepareCategory.' + category.toId(),
                     'revert': 'invalid'
                 });
-        this.updatePreparedHeading(level, category);
+        this.updatePreparedHeading(category, level);
+    },
+
+    clearPreparedSpells: function (evt) {
+        var element = $(evt.target).closest('h3,h4').next();
+        element.find('.preparedSpell').remove();
+        var category = element.data('category');
+        this.copy.preparedSpells[category] = {};
+        var maxLevel = 9; // TODO
+        for (var level = 0; level <= maxLevel; ++level) {
+            this.copy.preparedSpells[category][level] = [];
+            this.updatePreparedHeading(category, level);
+        }
+        evt.stopPropagation();
     },
 
     calculatePreparedSlotsLeft: function (classHeading, level) {
@@ -1754,7 +1786,7 @@ var BookMenu = Class.create({
         return [slots, extra];
     },
 
-    updatePreparedHeading: function (level, category) {
+    updatePreparedHeading: function (category, level) {
         var preparedHeading = $(`#preparedHeading_${category.toId()}_${level}`);
         var slotUsage = this.calculatePreparedSlotsLeft(category, level);
         var text = level.ordinal() + ' level:' + this.getPreparedSlotsLeftText(slotUsage);
@@ -1807,7 +1839,7 @@ var BookMenu = Class.create({
             var index = this.copy.preparedSpells[category][level].indexOf(spellKey);
             if (index >= 0) {
                 this.copy.preparedSpells[category][level].splice(index, 1);
-                this.updatePreparedHeading(level, category);
+                this.updatePreparedHeading(category, level);
             }
         } else {
             level = droppable.data('psb_level');
@@ -1851,12 +1883,24 @@ var BookMenu = Class.create({
     },
 
     populateSpellStorePanel: function () {
-        $.each(this.savedSpellLists, $.proxy(function (listName, list) {
-            this.appendSavedList(listName, list);
+        $('#spellStore .ui-sortable').sortable('destroy');
+        $.each(this.savedSpellListNames, $.proxy(function (index, listName) {
+            this.appendSavedList(listName);
         }, this));
+        $('#spellStore').sortable({
+            axis: 'y',
+            containment: 'parent',
+            helper: function(evt, element) {
+                return $(element).clone().position({ my: "left", at: "left", of: element });
+            },
+            stop: $.proxy(function (evt, ui) {
+                this.savedSpellListNames = $('.savedSpellLists').map(function () { return $(this).data('name') } ).get();
+                this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
+            }, this)
+        });
     },
 
-    appendSavedList: function (listName, list) {
+    appendSavedList: function (listName) {
         var listElt = $('<div/>').addClass('savedSpellLists').text(listName).data('name', listName);
         $('#spellStore').append(listElt);
         listElt.on('tap', $.proxy(function (evt) {
@@ -1875,9 +1919,11 @@ var BookMenu = Class.create({
                 }
             }
             var list = this.copy.preparedSpells || this.preparedSpells;
+            this.savedSpellListNames.push(listName);
             this.savedSpellLists[listName] = $.extend(true, {}, list);
+            this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
             this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
-            this.appendSavedList(listName, this.savedSpellLists[listName]);
+            this.appendSavedList(listName);
         }
     },
 
@@ -1894,9 +1940,14 @@ var BookMenu = Class.create({
     onSpellStoreDeleteButton: function (evt) {
         var selectedName = $('.selectedSpellList').data('name');
         if (selectedName && window.confirm('Delete saved "' + selectedName + '" list?')) {
-            delete(this.savedSpellLists[selectedName]);
-            this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
-            $('.selectedSpellList').remove();
+            var index = this.savedSpellListNames.indexOf(selectedName);
+            if (index >= 0) {
+                this.savedSpellListNames.splice(index, 1);
+                delete(this.savedSpellLists[selectedName]);
+                this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
+                this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
+                $('.selectedSpellList').remove();
+            }
         }
     }
 

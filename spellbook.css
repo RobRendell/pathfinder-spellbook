@@ -17,16 +17,19 @@ body {
 
 .book {
     display: inline-block;
+    width: 4cm;
+    height: 4cm;
+    vertical-align: top;
     border: 2px solid black;
     border-radius: 10px;
     -moz-border-radius: 10px;
     -webkit-border-radius: 10px;
     margin: 0.5cm;
-    width: 4cm;
     font-size: 16pt;
     text-align: center;
     cursor: pointer;
     background: #eee url("images/ui-bg_highlight-soft_100_eeeeee_1x100.png") 50% top repeat-x;
+    position: relative;
 }
 
 .book img {
@@ -34,6 +37,16 @@ body {
     height: 3cm;
     margin-left: auto;
     margin-right: auto;
+}
+
+.book div {
+    position: absolute;
+    bottom: 0.2em;
+    left: 0;
+    right: 0;
+    margin: 0 auto;
+    color: white;
+    text-shadow: 0px 0px 0.2em black, 0px 0px 0.4em blue;
 }
 
 .back {
@@ -109,13 +122,13 @@ body {
     margin-top: 0.5cm !important;
 }
 
-.spellsKnownLink {
+.headingControlLink {
     font-size: 70%;
     margin: 0 1em;
     float: right;
 }
 
-.spellsKnownLink:hover {
+.headingControlLink:hover {
     text-decoration: underline;
 }
 
@@ -147,7 +160,8 @@ body {
 }
 
 .spell {
-    width: 20em;
+    width: 34vw;
+    max-width: 20em;
     margin-left: auto;
     margin-right: auto;
     border: 1px solid #777;
@@ -243,7 +257,8 @@ body {
 }
 
 .prepareCategory {
-    width: 42em;
+    width: 82vw;
+    max-width: 42em;
     margin: 0 auto;
     display: flex;
 }
@@ -275,6 +290,11 @@ body {
     border: 1px solid cyan !important;
 }
 
+#preparedSpells.ui-accordion .ui-accordion-content,
+#spellListAccordion.ui-accordion .ui-accordion-content {
+    padding: 1em 0;
+}
+
 .slotTable {
     margin-left: auto;
     margin-right: auto;
@@ -287,12 +307,20 @@ body {
     padding: 0 0.5em;
 }
 
+#spellStore {
+    padding: 0.5em;
+}
+
 .savedSpellLists {
     height: 2em;
     max-width: 20em;
     border: 1px solid black;
+    border-radius: 10px;
+    -moz-border-radius: 10px;
+    -webkit-border-radius: 10px;
     background-color: #aaa;
-    margin: 0 auto 2em auto;
+    margin: 2em auto;
+    cursor: pointer;
 }
 
 .savedSpellLists.selectedSpellList {
@@ -303,30 +331,29 @@ body {
 
     .book {
         width: 40vw;
-        margin: 3vw;
+        height: 40vw;
+        margin: 2vw;
+    }
+
+    .book img {
+        width: 30vw;
+        height: 30vw;
+    }
+
+    .book div {
+        font-size: 6vw;
     }
 
     .spell {
-        width: 100%;
         max-width: 15em;
     }
 
     #prepareSpellsPanel .spell {
-        width: 34vw;
         min-height: 3em;
     }
 
     #prepareSpellsPanel .spell .view img {
         margin-top: 0.75em;
-    }
-
-    .prepareCategory {
-        width: 82vw;
-    }
-
-    #preparedSpells.ui-accordion .ui-accordion-content,
-    #spellListAccordion.ui-accordion .ui-accordion-content {
-        padding: 1em 0;
     }
 
 }
