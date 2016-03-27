@@ -602,7 +602,7 @@ var TopMenu = Class.create({
     },
 
     deleteBook: function (id) {
-        var index = this.bookIDs.findIndex(id);
+        var index = this.bookIDs.indexOf(id);
         if (index >= 0) {
             this.bookData[id].clearAll();
             delete(this.bookData[id]);
