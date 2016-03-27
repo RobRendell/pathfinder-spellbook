@@ -1947,12 +1947,13 @@ var BookMenu = Class.create({
                 if (!window.confirm('Overwrite ' + listName + ' list?')) {
                     return;
                 }
+            } else {
+                this.savedSpellListNames.push(listName);
+                this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
             }
             var list = this.copy.preparedSpells || this.preparedSpells;
-            this.savedSpellListNames.push(listName);
             this.savedSpellLists[listName] = $.extend(true, {}, list);
             this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
-            this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
             this.appendSavedList(listName);
         }
     },
