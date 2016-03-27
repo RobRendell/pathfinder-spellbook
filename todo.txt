@@ -1,11 +1,5 @@
 
-Embrace hash navigation fully, use it to select current book, instead of manual back() method to go back, rebuild in full on load.
-
-"back" navigation for hyperlinks between spell descriptions.
-
 Hide 0th level slots per day for spontaneous casters
-
-Change spellData.spellByName to spellById, use name.toId() instead of toLowerCase()?
 
 In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
 

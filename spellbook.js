@@ -1,6 +1,6 @@
 
 String.prototype.toId = function() {
-    return this.replace(/[^a-zA-Z0-9]/g, '_');
+    return this.toLowerCase().replace(/[^a-z0-9]/g, '_');
 }
 
 String.prototype.toTitleCase = function () {
@@ -264,7 +264,7 @@ var SpellData = Class.create({
         this.domainsForSources = {};
         this.bloodlinesForSources = {};
         this.patronsForSources = {};
-        this.spellByName = {};
+        this.spellById = {};
         this.domainCoverage = {};
         this.buildResultMapsForSources(progressFn, [
             [ this.classesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
@@ -285,7 +285,7 @@ var SpellData = Class.create({
 //        var thisdomainsForSources = {};
 //        var thisbloodlinesForSources = {};
 //        var thispatronsForSources = {};
-//        this.spellByName = {};
+//        this.spellById = {};
 //        this.buildResultMapsForSources(progressFn, [
 //            [ thisclassesForSources, $.proxy(this.getClassLevelsFromSpell, this) ],
 //            [ thisdomainsForSources, $.proxy(this.getDomainsFromSpell, this) ],
@@ -369,7 +369,7 @@ var SpellData = Class.create({
 
     buildResultMapsForSources: function (progressFn, resultMapsAndFnList) {
         $.each(this.rawData, $.proxy(function (index, spell) {
-            this.spellByName[spell.name.toLowerCase()] = spell;
+            this.spellById[spell.name.toId()] = spell;
             $.each(resultMapsAndFnList, function (index, resultMapAndFn) {
                 var resultMap = resultMapAndFn[0];
                 var resultFn = resultMapAndFn[1];
@@ -443,7 +443,7 @@ var BookKeys = {
     keyBookIDs: 'bookIDs',
     keyBookName: 'bookName',
     keyCurrentBookID: 'currentBookID',
-    keyCurrentPanel: 'currentPanel',
+    keyPanelHistory: 'panelHistory',
     keySelectedSources: 'selectedSources',
     keySelectedClasses: 'selectedClasses',
     keySelectedBloodlines: 'selectedBloodlines',
@@ -497,6 +497,7 @@ var TopMenu = Class.create({
         $('#spellPopup').dialog({
             'width': 'auto',
             'autoOpen': false,
+            'closeOnEscape': false,
             'modal': true
         });
         $('body').on('tap', '.ui-widget-overlay', function (evt) {
@@ -512,7 +513,7 @@ var TopMenu = Class.create({
         }, this));
         $(window).on('hashchange', $.proxy(function () {
             if (this.selectedBook) {
-                this.selectedBook.setCurrentView(window.location.hash.substr(1));
+                this.selectedBook.openPanel(window.location.hash.substr(1));
             }
         }, this));
         this.setSelectedBook(this.globalSettings.get(BookKeys.keyCurrentBookID));
@@ -571,7 +572,7 @@ var TopMenu = Class.create({
             this.selectedBook.showBookMenu();
         } else {
             this.globalSettings.clear(BookKeys.keyCurrentBookID);
-            this.globalSettings.clear(BookKeys.keyCurrentPanel);
+            this.globalSettings.clear(BookKeys.keyPanelHistory);
             this.selectedBook = null;
             $('.panel').fadeOut();
             this.refresh();
@@ -642,17 +643,35 @@ var BookMenu = Class.create({
         this.knownSpells = this.storage.get(BookKeys.keyKnownSpells, {});
         this.preparedSpells = this.storage.get(BookKeys.keyPreparedSpells, {});
         this.savedSpellLists = this.storage.get(BookKeys.keySavedSpellLists, {});
+        // TODO removeme convert various saved lists to use IDs
+        $.each(this.knownSpells, function (category, spellCategory) {
+            $.each(spellCategory, function (level, spellList) {
+                spellCategory[level] = spellList.map(function (s) { return s.toId() });
+            });
+        });
+        $.each(this.preparedSpells, function (category, spellCategory) {
+            $.each(spellCategory, function (level, spellList) {
+                spellCategory[level] = spellList.map(function (s) { return s.toId() });
+            });
+        });
+        $.each(this.savedSpellLists, function (listName, savedList) {
+            $.each(savedList, function (category, spellCategory) {
+                $.each(spellCategory, function (level, spellList) {
+                    spellCategory[level] = spellList.map(function (s) { return s.toId() });
+                });
+            });
+        })
+        // TODO end removeme
         this.savedSpellListNames = this.storage.get(BookKeys.keySavedSpellListNames, Object.keys(this.savedSpellLists));
         // Set up elements
         $('#bookPanelTitle').removeClass();
         $('#bookPanelTitle').addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
         $('.back').on('tap', $.proxy(this.back, this));
-        var setCurrentView = $.proxy(this.setCurrentView, this);
-        $('#detailsButton').on('tap', function () { setCurrentView('detailsPanel'); });
-        $('#spellSlotsButton').on('tap', function () { setCurrentView('spellSlotsPanel'); });
-        $('#knownButton').on('tap', function () { setCurrentView('spellsKnownPanel'); });
-        $('#adventuringButton').on('tap', function () { setCurrentView('adventuringPanel'); });
-        this.currentView = '';
+        var openPanel = $.proxy(this.openPanel, this);
+        $('#detailsButton').on('tap', function () { openPanel('detailsPanel'); });
+        $('#spellSlotsButton').on('tap', function () { openPanel('spellSlotsPanel'); });
+        $('#knownButton').on('tap', function () { openPanel('spellsKnownPanel'); });
+        $('#adventuringButton').on('tap', function () { openPanel('adventuringPanel'); });
         // Details panel setup
         $('#detailsAccordion').accordion({
             collapsible: true,
@@ -699,66 +718,74 @@ var BookMenu = Class.create({
         $('#spellSlotsPanelApply').on('tap', $.proxy(this.onSpellSlotsPanelApply, this));
         $('#spellsKnownPanelApply').on('tap', $.proxy(this.onSpellsKnownPanelApply, this));
         $('#adventuringRestButton').on('tap', $.proxy(this.onAdventuringRestButton, this));
-        $('#adventuringChangeSpellsButton').on('tap', function () { setCurrentView('prepareSpellsPanel'); });
+        $('#adventuringChangeSpellsButton').on('tap', function () { openPanel('prepareSpellsPanel'); });
         $('#prepareSpellsApplyButton').on('tap', $.proxy(this.onPrepareSpellsApplyButton, this));
-        $('#prepareSpellsStoreButton').on('tap', function () { setCurrentView('spellStorePanel'); });
+        $('#prepareSpellsStoreButton').on('tap', function () { openPanel('spellStorePanel'); });
         $('#spellStoreSaveButton').on('tap', $.proxy(this.onSpellStoreSaveButton, this));
         $('#spellStoreLoadButton').on('tap', $.proxy(this.onSpellStoreLoadButton, this));
         $('#spellStoreDeleteButton').on('tap', $.proxy(this.onSpellStoreDeleteButton, this));
-        // Show current panel
-        this.setCurrentView(this.globalSettings.get(BookKeys.keyCurrentPanel, 'menu'));
+        // Load saved panel history
+        this.panelHistory = [];
+        var views = this.globalSettings.get(BookKeys.keyPanelHistory, [ 'menu' ]);
+        for (var index = 0; index < views.length; ++index) {
+            this.openPanel(views[index]);
+        }
     },
 
-    setCurrentView: function (view) {
-        if (view != this.currentView) {
-            $('.panel').fadeOut();
-            window.location.hash = view;
-            this.currentView = view;
-            this.globalSettings.set(BookKeys.keyCurrentPanel, view);
-            if (view == '') {
-                $('.ui-accordion').accordion('destroy');
-                $('#book *').off();
-                this.topMenu.setSelectedBook(null);
-            } else if (view == 'menu') {
-                $('#bookMenu').fadeIn();
-            } else if (view == 'detailsPanel') {
-                $('#detailsPanel').fadeIn();
-                this.showDetailsPanel();
-            } else if (view == 'spellSlotsPanel') {
-                $('#spellSlotsPanel').fadeIn();
-                this.showSpellSlotsPanel();
-            } else if (view == 'spellsKnownPanel') {
-                $('#spellsKnownPanel').fadeIn();
-                this.showKnownPanel();
-            } else if (view == 'adventuringPanel') {
-                $('#adventuringPanel').fadeIn();
-                this.showAdventuringPanel();
-            } else if (view == 'prepareSpellsPanel') {
-                $('#prepareSpellsPanel').fadeIn();
-                this.showPrepareSpellsPanel();
-            } else if (view == 'spellStorePanel') {
-                $('#spellStorePanel').fadeIn();
-                this.showSpellStorePanel();
+    openPanel: function (view) {
+        if (this.panelHistory.length == 0 || view != this.panelHistory[this.panelHistory.length - 1]) {
+            var backwards = this.panelHistory.indexOf(view);
+            if (backwards >= 0) {
+                this.panelHistory.splice(backwards + 1);
             } else {
-                console.error('Unknown view name: ' + view);
+                this.panelHistory.push(view);
+            }
+            this.globalSettings.set(BookKeys.keyPanelHistory, this.panelHistory);
+            window.location.hash = view;
+            if (view.startsWith('spell:')) {
+                var spellId = view.substr('spell:'.length);
+                var spell = this.spellData.spellById[spellId];
+                this.displaySpellDetails(spell);
+            } else if ($('#spellPopup').dialog('isOpen')) {
+                $('#spellPopup').dialog('close');
+            } else {
+                $('.panel').fadeOut();
+                if (view == '') {
+                    $('.ui-accordion').accordion('destroy');
+                    $('#book *').off();
+                    this.topMenu.setSelectedBook(null);
+                } else if (view == 'menu') {
+                    $('#bookMenu').fadeIn();
+                } else if (view == 'detailsPanel') {
+                    $('#detailsPanel').fadeIn();
+                    this.showDetailsPanel();
+                } else if (view == 'spellSlotsPanel') {
+                    $('#spellSlotsPanel').fadeIn();
+                    this.showSpellSlotsPanel();
+                } else if (view == 'spellsKnownPanel') {
+                    $('#spellsKnownPanel').fadeIn();
+                    this.showKnownPanel();
+                } else if (view == 'adventuringPanel') {
+                    $('#adventuringPanel').fadeIn();
+                    this.showAdventuringPanel();
+                } else if (view == 'prepareSpellsPanel') {
+                    $('#prepareSpellsPanel').fadeIn();
+                    this.showPrepareSpellsPanel();
+                } else if (view == 'spellStorePanel') {
+                    $('#spellStorePanel').fadeIn();
+                    this.showSpellStorePanel();
+                } else {
+                    console.error('Unknown view name: ' + view);
+                }
             }
         }
     },
 
     back: function () {
-        if ($('#spellPopup').dialog('isOpen')) {
-            $('#spellPopup').dialog('close');
+        if (this.panelHistory.length > 1) {
+            this.openPanel(this.panelHistory[this.panelHistory.length - 2]);
         } else {
-            $('.panel').fadeOut();
-            if (this.currentView == 'menu') {
-                this.setCurrentView('');
-            } else if (this.currentView == 'spellStorePanel') {
-                this.setCurrentView('prepareSpellsPanel');
-            } else if (this.currentView == 'prepareSpellsPanel') {
-                this.setCurrentView('adventuringPanel');
-            } else {
-                this.setCurrentView('menu');
-            }
+            this.openPanel('');
         }
     },
 
@@ -948,7 +975,7 @@ var BookMenu = Class.create({
         var name = this.storage.get(BookKeys.keyBookName);
         if (window.confirm('Do you really want to delete "' + name + '"?  All saved configuration will be lost.')) {
             this.topMenu.deleteBook(this.id);
-            this.setCurrentView('menu');
+            this.openPanel('menu');
             this.back();
         }
     },
@@ -1160,7 +1187,7 @@ var BookMenu = Class.create({
                             categoryDiv.append(currentDiv);
                         }
                         this.appendSpellLine(currentDiv, spell, (this.knownSpells[value][currentLevel] !== undefined &&
-                                this.knownSpells[value][currentLevel].indexOf(spell.name.toLowerCase()) >= 0));
+                                this.knownSpells[value][currentLevel].indexOf(spell.name.toId()) >= 0));
                     }
                 }
             }
@@ -1173,7 +1200,7 @@ var BookMenu = Class.create({
         line.addClass(spell.school);
         line.append($('<span />').addClass('title').text(spell.name));
         if (known !== undefined) {
-            var spellKey = spell.name.toLowerCase();
+            var spellKey = spell.name.toId();
             line.append($(`<input type="checkbox" name="${spellKey}" />`).prop('checked', known));
         }
         if (overLevel == 1) {
@@ -1244,9 +1271,10 @@ var BookMenu = Class.create({
             }
         }
         content = content.replace(/<i>([^<,.]*)([,.])?<\/i>/g, $.proxy(function (whole, spellName, after) {
-            if (this.spellData.spellByName[spellName.toLowerCase()]) {
+            var spellKey = spellName.toId();
+            if (this.spellData.spellById[spellKey]) {
                 after = after || '';
-                return '<i><a href="#">' + spellName + '</a>' + after + '</i>';
+                return `<i><a href="#spell:${spellKey}">${spellName}</a>${after}</i>`;
             } else {
                 return whole;
             }
@@ -1265,13 +1293,7 @@ var BookMenu = Class.create({
         $('#spellPopup').html(content).dialog('option', 'title', spell.name)
                 .dialog('option', 'position', { my: 'left top', at: 'left top', of: window })
                 .dialog('open');
-        $('#spellPopup a').on('tap', $.proxy(this.spellHyperlink, this));
-    },
-
-    spellHyperlink: function (evt) {
-        evt.preventDefault();
-        var spellKey = $(evt.target).text().toLowerCase();
-        this.displaySpellDetails(this.spellData.spellByName[spellKey]);
+        window.location.hash = 'spell:' + spell.name.toId();
     },
 
     onSpellsKnownPanelApply: function () {
@@ -1296,7 +1318,7 @@ var BookMenu = Class.create({
             var known = {};
             $(`.${category.toId()} :checked`).each($.proxy(function (index, input) {
                 var spellKey = $(input).attr('name');
-                var spell = this.spellData.spellByName[spellKey];
+                var spell = this.spellData.spellById[spellKey];
                 var level = spell[category];
                 if (level === undefined && $.isArray(value)) {
                     level = spell[prefix + value[0]];
@@ -1387,7 +1409,7 @@ var BookMenu = Class.create({
                         isUsed = true;
                         spellKey = spellKey.substr(0, spellKey.length - 1);
                     }
-                    var spell = this.spellData.spellByName[spellKey];
+                    var spell = this.spellData.spellById[spellKey];
                     var spellLevel = this.getSpellLevel(value, spell);
                     var element = this.appendSpellLine(currentDiv, spell, undefined, level - spellLevel);
                     element.data('psb_level', level);
@@ -1476,7 +1498,7 @@ var BookMenu = Class.create({
     castPreparedSpell: function (evt) {
         var spellDiv = $(evt.currentTarget);
         var using = (evt.type == 'tap');
-        var spellKey = spellDiv.find('.title').text().toLowerCase();
+        var spellKey = spellDiv.find('.title').text().toId();
         var from, to;
         if (using) {
             spellDiv.addClass('used');
@@ -1652,7 +1674,7 @@ var BookMenu = Class.create({
         knownDiv.append(levelDiv);
         levelDiv.on('drop', $.proxy(this.dropSpell, this));
         $.each(knownSpells.sort().uniq(), $.proxy(function (index, spellKey) {
-            var spell = this.spellData.spellByName[spellKey];
+            var spell = this.spellData.spellById[spellKey];
             this.appendSpellLine(levelDiv, spell).addClass('knownSpells' + level)
                     .addClass(this.getDecorationClassForSpell(classHeading, spell))
                     .draggable({
@@ -1677,7 +1699,7 @@ var BookMenu = Class.create({
                 domain = domain[1];
             }
             if (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading) {
-                if (this.knownSpells['Domain: ' + domain]['all'].indexOf(spell.name.toLowerCase()) >= 0) {
+                if (this.knownSpells['Domain: ' + domain]['all'].indexOf(spell.name.toId()) >= 0) {
                     result += 'bonus ';
                 }
             }
@@ -1704,7 +1726,7 @@ var BookMenu = Class.create({
             if (spellKey.indexOf('!') == spellKey.length - 1) {
                 spellKey = spellKey.substr(0, spellKey.length - 1);
             }
-            var spell = this.spellData.spellByName[spellKey];
+            var spell = this.spellData.spellById[spellKey];
             this.addPreparedSpell(levelDiv, spell, level, classHeading);
         }, this));
     },
@@ -1750,8 +1772,8 @@ var BookMenu = Class.create({
             return (this.categoryAssociations.Domain && this.categoryAssociations.Domain[domain] == classHeading);
         }, this)) >= 0;
         var prepared = ((this.copy && this.copy.preparedSpells) || this.preparedSpells)[classHeading][level];
-        $.each(prepared, $.proxy(function (index, spellName) {
-            var spell = this.spellData.spellByName[spellName.toLowerCase()];
+        $.each(prepared, $.proxy(function (index, spellKey) {
+            var spell = this.spellData.spellById[spellKey];
             var school = spell.school.toTitleCase();
             if (this.categoryAssociations.School && this.categoryAssociations.School[school] == classHeading) {
                 var affinity = this.selectedSchools[school];
@@ -1771,7 +1793,7 @@ var BookMenu = Class.create({
                     if (this.categoryAssociations.Domain[domain] != classHeading) {
                         return false;
                     }
-                    return (this.knownSpells['Domain: ' + domain]['all'].indexOf(spellName) >= 0)
+                    return (this.knownSpells['Domain: ' + domain]['all'].indexOf(spellKey) >= 0)
                 }, this ));
                 if (domainMatch.length > 0) {
                     hasDomainSlot = false;
@@ -1838,8 +1860,8 @@ var BookMenu = Class.create({
         var droppable = $(evt.target);
         var category = droppable.data('psb_category');
         var spellName = ui.draggable.find('.title').text();
-        var spellKey = spellName.toLowerCase();
-        var spell = this.spellData.spellByName[spellName.toLowerCase()];
+        var spellKey = spellName.toId();
+        var spell = this.spellData.spellById[spellKey];
         var level;
         if (droppable.is('.knownSpellsDiv')) {
             ui.draggable.hide();
