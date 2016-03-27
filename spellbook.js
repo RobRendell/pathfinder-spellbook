@@ -1156,8 +1156,8 @@ var BookMenu = Class.create({
             }
             var headingElt = $('<h3/>').text(name);
             accordion.append(headingElt);
-            headingElt.append($('<span class="headingControlLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
-            headingElt.append($('<span class="headingControlLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
+            headingElt.append($('<span/>').addClass('headingControlLink').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
+            headingElt.append($('<span/>').addClass('headingControlLink').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
             var categoryDiv = $('<div/>').addClass('accordion').addClass(value.toId());
             this.spellData.rawData.sort(this.orderSpellsByFields(subdomain || value, 'name'));
             var currentLevel, currentDiv, skipDomainSpell = false;
@@ -1182,9 +1182,15 @@ var BookMenu = Class.create({
                             var levelElt = $('<h4 />').text('Level ' + currentLevel);
                             levelElt.append($('<span class="headingControlLink" />').text('Clear All').on('click touch', $.proxy(this.clearAllCheckboxes, this)));
                             levelElt.append($('<span class="headingControlLink" />').text('Select All').on('click touch', $.proxy(this.setAllCheckboxes, this)));
+                            levelElt.append($('<span/>').addClass('headingNote').text('(0 known)'));
                             categoryDiv.append(levelElt);
-                            currentDiv = $('<div />');
+                            currentDiv = $('<div />').addClass('spellLevelDiv');
                             categoryDiv.append(currentDiv);
+                            currentDiv.on('change', 'input', function (evt) {
+                                var container = $(evt.target).closest('.spellLevelDiv');
+                                var selected = container.find(':checked');
+                                container.prev().find('.headingNote').text(`(${selected.length} known)`);
+                            });
                         }
                         this.appendSpellLine(currentDiv, spell, (this.knownSpells[value][currentLevel] !== undefined &&
                                 this.knownSpells[value][currentLevel].indexOf(spell.name.toId()) >= 0));
@@ -1196,12 +1202,16 @@ var BookMenu = Class.create({
     },
 
     appendSpellLine: function (element, spell, known, overLevel) {
-        var line = $('<label class="spell" />');
-        line.addClass(spell.school);
+        var line = $('<label />').addClass('spell').addClass(spell.school);
+        element.append(line);
         line.append($('<span />').addClass('title').text(spell.name));
         if (known !== undefined) {
             var spellKey = spell.name.toId();
-            line.append($(`<input type="checkbox" name="${spellKey}" />`).prop('checked', known));
+            var checkbox = $(`<input type="checkbox" name="${spellKey}" />`).prop('checked', known);
+            line.append(checkbox);
+            if (known) {
+                checkbox.change();
+            }
         }
         if (overLevel == 1) {
             line.append($('<span class="note" />').text('(1 level over)'));
@@ -1212,7 +1222,6 @@ var BookMenu = Class.create({
             this.displaySpellDetails(spell);
             evt.stopPropagation();
         }, this)));
-        element.append(line);
         return line;
     },
 

@@ -1,8 +1,6 @@
 
 Hide 0th level slots per day for spontaneous casters
 
-In Known Spells panel, show a running # of spells known at each level (for spontaneous casters and spell book pages)
-
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation".  Arcane Mark, Detect Poison missing from Witch spell list.
 
 Ultimate Magic alternate specialty schools? http://paizo.com/pathfinderRPG/prd/ultimateMagic/spellcastingClassOptions/wizard.html

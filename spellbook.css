@@ -122,6 +122,11 @@ body {
     margin-top: 0.5cm !important;
 }
 
+.headingNote {
+    margin: 0 1em;
+    float: right;
+}
+
 .headingControlLink {
     font-size: 70%;
     margin: 0 1em;
