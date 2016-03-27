@@ -1949,12 +1949,12 @@ var BookMenu = Class.create({
                 }
             } else {
                 this.savedSpellListNames.push(listName);
-                this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
+                this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
                 this.appendSavedList(listName);
             }
-            var list = this.copy.preparedSpells || this.preparedSpells;
+            var list = this.copy.preparedSpells;
             this.savedSpellLists[listName] = $.extend(true, {}, list);
-            this.storage.set(BookKeys.keySavedSpellListNames, this.savedSpellListNames);
+            this.storage.set(BookKeys.keySavedSpellLists, this.savedSpellLists);
         }
     },
 
