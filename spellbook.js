@@ -659,6 +659,9 @@ var BookMenu = Class.create({
             active: false,
             heightStyle: "content"
         });
+        $('#detailsPanel .clear').on('click touch', $.proxy(this.clearAllCheckboxes, this));
+        $('#detailsPanel .clearOptions').on('click touch', $.proxy(this.clearAllOptions, this));
+        $('#detailsPanel .select').on('click touch', $.proxy(this.setAllCheckboxes, this));
         $('.sourcebook').on('change', $.proxy(function (evt) {
             var checkbox = $(evt.target);
             this.refreshSelectedSources(checkbox.attr('name'), checkbox.prop('checked'));
@@ -828,14 +831,12 @@ var BookMenu = Class.create({
 
     changeSelection: function (list, value, enabled, sortFn) {
         if (value) {
-            if (enabled) {
+            var index = $.inArray(value, list);
+            if (enabled && index < 0) {
                 list.push(value);
                 list.sort(sortFn);
-            } else {
-                var index = $.inArray(value, list);
-                if (index >= 0) {
-                    list.splice(index, 1);
-                }
+            } else if (!enabled && index >= 0) {
+                list.splice(index, 1);
             }
         }
     },
@@ -1191,14 +1192,21 @@ var BookMenu = Class.create({
     setAllCheckboxes: function (evt) {
         // Find ancestor H3/H4 element, then set all checkboxes in the following sibling.
         var element = $(evt.target).closest('h3,h4').next();
-        element.find('input').prop('checked', true);
+        element.find('input').prop('checked', true).change();
         evt.stopPropagation();
     },
 
     clearAllCheckboxes: function (evt) {
         // Find ancestor H3/H4 element, then clear all checkboxes in the following sibling.
         var element = $(evt.target).closest('h3,h4').next();
-        element.find('input').prop('checked', false);
+        element.find('input').prop('checked', false).change();
+        evt.stopPropagation();
+    },
+
+    clearAllOptions: function (evt) {
+        // Find ancestor H3/H4 element, then clear all select elements in the following sibling.
+        var element = $(evt.target).closest('h3,h4').next();
+        element.find('select').val('').change();
         evt.stopPropagation();
     },
 
