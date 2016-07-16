@@ -498,13 +498,16 @@ var TopMenu = Class.create({
             'width': 'auto',
             'autoOpen': false,
             'closeOnEscape': false,
-            'modal': true
+            'modal': true,
+            'close': $.proxy(function (evt, ui) {
+                this.selectedBook.removeSpellsFromHistory();
+            }, this)
         });
-        $('body').on('tap', '.ui-widget-overlay', function (evt) {
+        $('body').on('tap', '.ui-widget-overlay', $.proxy(function (evt) {
             $('#spellPopup').dialog('close');
             evt.preventDefault()
             evt.stopPropagation();
-        });
+        }, this));
         $(document).on('keydown', $.proxy(function (evt) {
             if (evt.keyCode == 27 && this.selectedBook) {
                 evt.preventDefault();
@@ -768,6 +771,13 @@ var BookMenu = Class.create({
         } else {
             this.openPanel('');
         }
+    },
+
+    removeSpellsFromHistory: function () {
+        while (this.panelHistory.length > 0 && this.panelHistory[this.panelHistory.length - 1].startsWith('spell:')) {
+            this.panelHistory.pop();
+        }
+        this.globalSettings.set(BookKeys.keyPanelHistory, this.panelHistory);
     },
 
     showDetailsPanel: function () {

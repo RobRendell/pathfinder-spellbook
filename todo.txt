@@ -1,6 +1,4 @@
 
-Closing a spell description doesn't remove it from history
-
 Can't close spell description on touchscreen (probably wrong event on close control)
 
 When choosing spells, open/close corresponding list of spells
