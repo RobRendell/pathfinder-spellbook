@@ -1,4 +1,10 @@
 
+Closing a spell description doesn't remove it from history
+
+Can't close spell description on touchscreen (probably wrong event on close control)
+
+When choosing spells, open/close corresponding list of spells
+
 Hide 0th level slots per day for spontaneous casters
 
 Corrections to spell data?  Beast Form II doesn't <i> the ref to Beast Form I, Malfunction has school of "transformation" rather than "transmutation".  Arcane Mark, Detect Poison missing from Witch spell list.

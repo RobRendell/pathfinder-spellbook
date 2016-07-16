@@ -643,25 +643,6 @@ var BookMenu = Class.create({
         this.knownSpells = this.storage.get(BookKeys.keyKnownSpells, {});
         this.preparedSpells = this.storage.get(BookKeys.keyPreparedSpells, {});
         this.savedSpellLists = this.storage.get(BookKeys.keySavedSpellLists, {});
-        // TODO removeme convert various saved lists to use IDs
-        $.each(this.knownSpells, function (category, spellCategory) {
-            $.each(spellCategory, function (level, spellList) {
-                spellCategory[level] = spellList.map(function (s) { return s.toId() });
-            });
-        });
-        $.each(this.preparedSpells, function (category, spellCategory) {
-            $.each(spellCategory, function (level, spellList) {
-                spellCategory[level] = spellList.map(function (s) { return s.toId() });
-            });
-        });
-        $.each(this.savedSpellLists, function (listName, savedList) {
-            $.each(savedList, function (category, spellCategory) {
-                $.each(spellCategory, function (level, spellList) {
-                    spellCategory[level] = spellList.map(function (s) { return s.toId() });
-                });
-            });
-        })
-        // TODO end removeme
         this.savedSpellListNames = this.storage.get(BookKeys.keySavedSpellListNames, Object.keys(this.savedSpellLists));
         // Set up elements
         $('#bookPanelTitle').removeClass();
@@ -1782,6 +1763,9 @@ var BookMenu = Class.create({
         }, this)) >= 0;
         var prepared = ((this.copy && this.copy.preparedSpells) || this.preparedSpells)[classHeading][level];
         $.each(prepared, $.proxy(function (index, spellKey) {
+            if (spellKey.indexOf('!') == spellKey.length - 1) {
+                spellKey = spellKey.substr(0, spellKey.length - 1);
+            }
             var spell = this.spellData.spellById[spellKey];
             var school = spell.school.toTitleCase();
             if (this.categoryAssociations.School && this.categoryAssociations.School[school] == classHeading) {
@@ -2077,8 +2061,9 @@ $(document).ready(function () {
         });
         new TopMenu(globalSettings, spellData);
     })
-    .fail(function (err) {
-        $('#loading').text('Error: ' + err);
+    .fail(function (err, textStatus, errorThrown) {
+        console.error(err, textStatus, errorThrown);
+        $('#loading').text('Error: unable to contact spreadsheets.google.com ' + textStatus);
     });
     /*
     $('.panel').hide();
