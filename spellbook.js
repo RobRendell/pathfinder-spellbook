@@ -1629,21 +1629,15 @@ var BookMenu = Class.create({
             beforeActivate: function (evt, ui) {
                 var target = $(evt.target);
                 target.data('changeInProgress', true);
-                var children = target.children('h4');
-                var active;
-                if (ui.newHeader && ui.newHeader.context) {
-                    active = children.index(ui.newHeader.context);
-                } else {
-                    active = -1;
+                if (!ui.newHeader || !ui.newHeader.context) {
+                    return;
                 }
+                var children = target.children('h4');
+                var active = children.index(ui.newHeader.context);
                 // trigger other accordion
                 target.parent().find('.accordion').each(function (index, element) {
-                    if (element != evt.target && !$(element).data('changeInProgress')) {
-                        if (active == -1) {
-                            $(element).accordion('option', 'active', false);
-                        } else {
-                            $(element).accordion('option', 'active', active);
-                        }
+                    if (!$(element).data('changeInProgress')) {
+                        $(element).accordion('option', 'active', active);
                     }
                 });
             },
