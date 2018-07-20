@@ -346,11 +346,11 @@ var SpellData = Class.create({
                     var keyValueArray = value.match(/([^()]*?) \(([0-9]*)\)/);
                     if (keyValueArray) {
                         var name = keyValueArray[1];
-                        var value = parseInt(keyValueArray[2]);
-                        parsed[name] = value;
-                        spell[`${fieldName.toTitleCase()}: ${name}`] = value;
+                        var numberValue = parseInt(keyValueArray[2]);
+                        parsed[name] = numberValue;
+                        spell[`${fieldName.toTitleCase()}: ${name}`] = numberValue;
                         if (extraFn) {
-                            extraFn(spell,name, value);
+                            extraFn(spell,name, numberValue);
                         }
                     } else {
                         console.error(`Field ${fieldName} of spell ${spell.name} did not match expected pattern: ${value}`);
@@ -1338,7 +1338,7 @@ var BookMenu = Class.create({
             if ($.isArray(domain)) {
                 category = 'Domain: ' + domain[1];
             } else {
-                category = 'Domain: ' + value;
+                category = 'Domain: ' + domain;
             }
             $.each(this.knownSpells[category], function (level, spellList) {
                 all = all.concat(spellList);
@@ -2016,7 +2016,7 @@ $(document).ready(function () {
     $('#loading').show();
     // Now load the data.
     $.ajax({
-        url: 'https://spreadsheets.google.com/pub?key=0AhwDI9kFz9SddG5GNlY5bGNoS2VKVC11YXhMLTlDLUE&output=csv',
+        url:'https://docs.google.com/spreadsheets/d/1cuwb3QSvWDD7GG5McdvyyRBpqycYuKMRsXgyrvxvLFI/export?format=csv',
         xhr: function () {
             var xhr = new window.XMLHttpRequest();
             xhr.addEventListener('progress', function (evt) {
