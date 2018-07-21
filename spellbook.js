@@ -569,11 +569,10 @@ class BookMenu {
         $bookPanelTitle.removeClass();
         $bookPanelTitle.addClass(`name_${this.id}`).text(this.storage.get(BookKeys.keyBookName));
         $('.back').on('tap', this.back.bind(this));
-        const openPanel = this.openPanel.bind(this);
-        $('#detailsButton').on('tap', function () { openPanel('detailsPanel'); });
-        $('#spellSlotsButton').on('tap', function () { openPanel('spellSlotsPanel'); });
-        $('#knownButton').on('tap', function () { openPanel('spellsKnownPanel'); });
-        $('#adventuringButton').on('tap', function () { openPanel('adventuringPanel'); });
+        $('#detailsButton').on('tap', () => {this.openPanel('detailsPanel')});
+        $('#spellSlotsButton').on('tap', () => {this.openPanel('spellSlotsPanel')});
+        $('#knownButton').on('tap', () => {this.openPanel('spellsKnownPanel')});
+        $('#adventuringButton').on('tap', () => {this.openPanel('adventuringPanel')});
         // Details panel setup
         $('#detailsAccordion').accordion({
             collapsible: true,
@@ -620,9 +619,9 @@ class BookMenu {
         $('#spellSlotsPanelApply').on('tap', this.onSpellSlotsPanelApply.bind(this));
         $('#spellsKnownPanelApply').on('tap', this.onSpellsKnownPanelApply.bind(this));
         $('#adventuringRestButton').on('tap', this.onAdventuringRestButton.bind(this));
-        $('#adventuringChangeSpellsButton').on('tap', function () { openPanel('prepareSpellsPanel'); });
+        $('#adventuringChangeSpellsButton').on('tap', () => {this.openPanel('prepareSpellsPanel')});
         $('#prepareSpellsApplyButton').on('tap', this.onPrepareSpellsApplyButton.bind(this));
-        $('#prepareSpellsStoreButton').on('tap', function () { openPanel('spellStorePanel'); });
+        $('#prepareSpellsStoreButton').on('tap', () => {this.openPanel('spellStorePanel')});
         $('#spellStoreSaveButton').on('tap', this.onSpellStoreSaveButton.bind(this));
         $('#spellStoreLoadButton').on('tap', this.onSpellStoreLoadButton.bind(this));
         $('#spellStoreDeleteButton').on('tap', this.onSpellStoreDeleteButton.bind(this));
@@ -1068,8 +1067,8 @@ class BookMenu {
             let currentLevel = -1, currentDiv, skipDomainSpell = false;
             for (let index = 0; index < this.spellData.rawData.length; ++index) {
                 const spell = this.spellData.rawData[index];
-                if (this.selectedSources.indexOf(spell.source) >= 0) {
-                    let spellLevel = spell[value];
+                let spellLevel = spell[value];
+                if (this.selectedSources.indexOf(spell.source) >= 0 || (this.knownSpells[value][spellLevel] || []).indexOf(spell.name.toId()) >= 0) {
                     if (subdomain) {
                         if (skipDomainSpell) {
                             spellLevel = undefined;
